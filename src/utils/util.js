@@ -9,31 +9,43 @@ function generateOTP() {
     return OTP;
 }
 
-function writeToStorageFile(otp, phoneNumber, data) {
-    const storageFile = fs.readFileSync('hashed_with_otp.json');
-    const fileContent = JSON.parse(storageFile);
+async function writeToStorageFile(otp, transactionRef, data) {
+    try {
+        const storageFile = fs.readFileSync('hashed_with_otp.json');
+        let fileContent = JSON.parse(storageFile);
 
-    if (!fileContent[phoneNumber]) { //If data does not already exists in the file.
-        fileContent[phoneNumber] = {otp: otp, data: data};
-    }
-
-    fs.writeFile('hashed_with_otp.json', JSON.stringify(fileContent), (err) => {
-        console.log('Successfully stored json');
-        if (err) {
-            console.log(err.stack)
-            throw err;
+        if (fileContent.hasOwnProperty(transactionRef)) {
+            fileContent[transactionRef] = {otp: otp, data: data};
+        } else {
+            let object = {};
+            object[`${transactionRef}`] = {otp: otp, data: data};
+            fileContent = Object.assign(fileContent, object);
         }
-    });
+
+        fs.writeFile('hashed_with_otp.json', JSON.stringify(fileContent), (err) => {
+            if (err) {
+                throw err;
+            }
+        });
+    } catch (error) {
+        console.log(error);
+        throw error;
+    }
 }
 
-function readFromStorageFile(otp, phoneNumber) {
-    const storageFile = fs.readFileSync('hashed_with_otp.json');
-    const fileContent = JSON.parse(storageFile);
+async function readFromStorageFile(otp, transactionRef) {
+    try {
+        const storageFile = fs.readFileSync('hashed_with_otp.json');
+        const fileContent = JSON.parse(storageFile);
 
-    if (fileContent[phoneNumber] && (fileContent[phoneNumber].otp == otp))
-        return fileContent[phoneNumber].data;
+        if (fileContent[transactionRef] && (fileContent[transactionRef].otp == otp))
+            return fileContent[transactionRef].data;
 
-    return null
+        return null;
+    } catch (error) {
+        console.log(error);
+        throw error;
+    }
 }
 
 module.exports = { generateOTP, writeToStorageFile, readFromStorageFile };

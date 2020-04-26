@@ -16,5 +16,5 @@ npm test
 
 ### Start App
 ```
-npm start
+npm run dev
 ```
