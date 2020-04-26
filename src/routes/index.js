@@ -11,6 +11,6 @@ router.get('/health', function(req, res, next) {
 });
 
 /* Get loan status */
-router.post('/loans', getStatus)
+router.post('/loans', getStatus);
 
 module.exports = router;

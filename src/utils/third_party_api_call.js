@@ -12,7 +12,7 @@ function getLoanStatus(customerRef) {
         return response.data
     })
     .catch(function (error) {
-        console.log(error);
+        console.log(error.message);
         throw error
     })
 }

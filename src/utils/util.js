@@ -28,7 +28,7 @@ async function writeToStorageFile(otp, transactionRef, data) {
             }
         });
     } catch (error) {
-        console.log(error);
+        console.log(error.message);
         throw error;
     }
 }
@@ -43,7 +43,7 @@ async function readFromStorageFile(otp, transactionRef) {
 
         return null;
     } catch (error) {
-        console.log(error);
+        console.log(error.message);
         throw error;
     }
 }

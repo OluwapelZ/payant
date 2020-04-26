@@ -16,8 +16,8 @@ function encrypt(sharedKey, plainText) {
     cipher.final("base64");
 
   } catch (error) {
-    console.log(error)
-    throw error
+    console.log(error.message)
+    throw error;
   }
 }
 
@@ -36,8 +36,8 @@ function decrypt(sharedKey, cipherText) {
     return cipher.update(cipherText, "base64", "utf8") +
     cipher.final("utf8");
   } catch (error) {
-    console.log(error);
-    throw error
+    console.log(error.message);
+    throw error;
   }
 }
 module.exports = { encrypt, decrypt };

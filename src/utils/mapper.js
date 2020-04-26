@@ -1,3 +1,5 @@
+const CONSTANTS = require('../config/constant');
+
 function getLoanStatusMapper(rawData) {
     return {
         provider_response_code: "00",
@@ -13,6 +15,25 @@ function getLoanStatusMapper(rawData) {
             field_key: null
         }
     };
+}
+
+function mapErrorResponse(message, stack) {
+    return {
+        status: CONSTANTS.REQUEST_STATUSES.FAILED,
+        message: message,
+        data: {
+            provider_response_code: null,
+            provider: "Migo",
+            errors: stack,
+            error: message,
+            provider_response: null,
+            reference: null,
+            meta: {
+                field_key: null,
+                field_key: null
+            }
+        }
+    }
 }
 
 function mapLoans(rawLoansData) {
@@ -45,4 +66,4 @@ function mapLoans(rawLoansData) {
     }
 }
 
-module.exports = { getLoanStatusMapper };
+module.exports = { getLoanStatusMapper, mapErrorResponse };

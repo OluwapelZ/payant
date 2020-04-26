@@ -9,7 +9,14 @@ const { success, failed, waitingForOTP, wrongAuthProvder } = require('../utils/h
 
 async function getStatus(req, res) {
     try {
-        const loanRequestPayload = JSON.parse(decrypt(config.crypt_key, req.body.data));
+        let rawData = decrypt(config.crypt_key, req.body.data);
+        let trimmedDated = rawData.split("").filter(function(e) {
+            return e != "\u0000" ;
+        });
+        rawData = trimmedDated.join('');
+        rawData = trimmedDated.replace(',,', '')
+     
+        const loanRequestPayload = JSON.parse(rawData);
         const transaction = loanRequestPayload.transaction;
 
         if (loanRequestPayload.auth.auth_provider != config.provider_name) {
@@ -19,7 +26,7 @@ async function getStatus(req, res) {
         if (loanRequestPayload.request_mode == CONSTANTS.REQUEST_TYPES.TRANSACT) {
             const loanStatusResponse =  await getStatusFromMigo(transaction.customer.customer_ref);
 
-            if (loanRequestPayload.transaction.details.otp_override == true || loanRequestPayload.transaction.app_info.extras.otp_override == true) {
+            if ((loanRequestPayload.transaction.details && loanRequestPayload.transaction.details.otp_override == true) || loanRequestPayload.transaction.app_info.extras.otp_override == true) {
                 return success(res, CONSTANTS.STATUS_CODES.SUCCESS, ResponseMessage.FETCHED_LOAN_STATUS_SUCCESSFULLY, getLoanStatusMapper(loanStatusResponse));
             }
             const otp = generateOTP();
@@ -38,7 +45,8 @@ async function getStatus(req, res) {
             return (data) ? success(res, CONSTANTS.STATUS_CODES.SUCCESS, ResponseMessage.FETCHED_LOAN_STATUS_SUCCESSFULLY, JSON.parse(decrypt(config.crypt_key, data))) : failed(res, CONSTANTS.STATUS_CODES.FAILED, ResponseMessage.INVALID_OTP);
         }
     } catch (error) {
-        failed(res, CONSTANTS.STATUS_CODES.FAILED, error.stack);
+        console.log(error.message)
+        failed(res, CONSTANTS.STATUS_CODES.FAILED, error.message, error.stack);
     }
 }
 
@@ -64,7 +72,7 @@ function sendOTPSms(phone, surname, otp) {
     
         return sendOTP(smsData);
     } catch (error) {
-        console.log(error);
+        console.log(error.message);
         throw error;
     }
 }
