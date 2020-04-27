@@ -4,4 +4,4 @@ COPY package.json /src
 RUN npm install && npm audit fix
 COPY . /src
 EXPOSE 3000
-ENTRYPOINT ["/src/deploy.sh"]
+ENTRYPOINT ["src/deploy.sh"]
