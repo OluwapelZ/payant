@@ -14,7 +14,6 @@ async function getStatus(req, res) {
             return e != "\u0000" ;
         });
         rawData = trimmedDated.join('');
-        rawData = trimmedDated.replace(',,', '')
      
         const loanRequestPayload = JSON.parse(rawData);
         const transaction = loanRequestPayload.transaction;
