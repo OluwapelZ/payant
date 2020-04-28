@@ -9,6 +9,10 @@ function generateOTP() {
     return OTP;
 }
 
+function generateRandomReference() {
+    return `${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`;
+}
+
 function hashPhoneNumber(phone) {
     return `${phone.substr(0, 7)}*****${phone.substr(11, 2)}`
 }
@@ -52,4 +56,4 @@ async function readFromStorageFile(otp, transactionRef) {
     }
 }
 
-module.exports = { generateOTP, hashPhoneNumber, writeToStorageFile, readFromStorageFile };
+module.exports = { generateOTP, generateRandomReference, hashPhoneNumber, writeToStorageFile, readFromStorageFile };

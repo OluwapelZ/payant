@@ -1,4 +1,5 @@
 const CONSTANTS = require('../config/constant');
+const { generateRandomReference } = require('../utils/util');
 
 function getLoanStatusMapper(rawData) {
     return {
@@ -9,7 +10,7 @@ function getLoanStatusMapper(rawData) {
         provider_response: {
         loans: mapLoans(rawData)
         },
-        reference: null,
+        reference: generateRandomReference(),
         meta: {
             field_key: null,
             field_key: null
@@ -27,7 +28,7 @@ function mapErrorResponse(message, stack) {
             errors: stack,
             error: message,
             provider_response: null,
-            reference: null,
+            reference: generateRandomReference(),
             meta: {
                 field_key: null,
                 field_key: null
@@ -45,7 +46,9 @@ function mapWaitingForOTP(message) {
             provider: "Migo",
             errors: null,
             error: null,
-            provider_response: null
+            provider_response: null,
+            reference: generateRandomReference(),
+            meta: null
         }
     }
 }
@@ -78,6 +81,8 @@ function mapLoans(rawLoansData) {
             )
         });
     }
+
+    return loans;
 }
 
 module.exports = { getLoanStatusMapper, mapErrorResponse, mapWaitingForOTP };
