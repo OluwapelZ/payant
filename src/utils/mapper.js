@@ -8,12 +8,8 @@ function getLoanStatusMapper(rawData) {
         errors: null,
         error: null,
         provider_response: {
-        loans: mapLoans(rawData)
-        },
-        reference: generateRandomReference(),
-        meta: {
-            field_key: null,
-            field_key: null
+            loans: mapLoans(rawData),
+            reference: generateRandomReference()
         }
     };
 }
@@ -27,12 +23,9 @@ function mapErrorResponse(message, stack) {
             provider: "Migo",
             errors: stack,
             error: message,
-            provider_response: null,
-            reference: generateRandomReference(),
-            meta: {
-                field_key: null,
-                field_key: null
-            }
+            provider_response: {
+                reference: generateRandomReference()
+            },
         }
     }
 }
@@ -46,9 +39,9 @@ function mapWaitingForOTP(message) {
             provider: "Migo",
             errors: null,
             error: null,
-            provider_response: null,
-            reference: generateRandomReference(),
-            meta: null
+            provider_response: {
+                reference: generateRandomReference()
+            }
         }
     }
 }
