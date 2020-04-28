@@ -9,6 +9,10 @@ function generateOTP() {
     return OTP;
 }
 
+function hashPhoneNumber(phone) {
+    return `${phone.substr(0, 7)}*****${phone.substr(11, 2)}`
+}
+
 async function writeToStorageFile(otp, transactionRef, data) {
     try {
         const storageFile = fs.readFileSync('hashed_with_otp.json');
@@ -48,4 +52,4 @@ async function readFromStorageFile(otp, transactionRef) {
     }
 }
 
-module.exports = { generateOTP, writeToStorageFile, readFromStorageFile };
+module.exports = { generateOTP, hashPhoneNumber, writeToStorageFile, readFromStorageFile };

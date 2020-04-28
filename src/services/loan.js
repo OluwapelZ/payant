@@ -1,7 +1,7 @@
 const { encrypt, decrypt } = require('../utils/crypt');
 const { getLoanStatus, sendOTP } = require('../utils/third_party_api_call');
 const { getLoanStatusMapper } = require('../utils/mapper');
-const { generateOTP, readFromStorageFile, writeToStorageFile } = require('../utils/util');
+const { generateOTP, hashPhoneNumber, readFromStorageFile, writeToStorageFile } = require('../utils/util');
 const config = require('../config/config');
 const CONSTANTS = require('../config/constant');
 const ResponseMessage = require('../config/respnose_messages');
@@ -37,7 +37,7 @@ async function getStatus(req, res) {
             await writeToStorageFile(otp, transaction.transaction_ref, encrypt(config.crypt_key, JSON.stringify(getLoanStatusMapper(loanStatusResponse))));
 
             //Send response
-            return waitingForOTP(res, CONSTANTS.STATUS_CODES.WAITING_FOR_OTP, ResponseMessage.SUCCESSFULLY_SENT_OTP);
+            return waitingForOTP(res, CONSTANTS.STATUS_CODES.WAITING_FOR_OTP, `${ResponseMessage.SUCCESSFULLY_SENT_OTP} ${hashPhoneNumber(transaction.customer.mobile_no)}`);
         } else if (loanRequestPayload.request_mode == CONSTANTS.REQUEST_TYPES.VALIDATE) {
             const data = await validateOTP(loanRequestPayload.auth.secure, loanRequestPayload.transaction.transaction_ref);
              

@@ -29,5 +29,5 @@ docker build -t migo .
 
 Run the container in detached mode (optional)
 ```
-docker run -p 8082:3000 -d <image_name>
+docker run -p 8082:3000 -d migo
 ```
