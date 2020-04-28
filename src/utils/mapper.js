@@ -36,6 +36,20 @@ function mapErrorResponse(message, stack) {
     }
 }
 
+function mapWaitingForOTP(message) {
+    return {
+        status: CONSTANTS.REQUEST_STATUSES.WAITING_FOR_OTP,
+        message: message,
+        data: {
+            provider_response_code: "900T0",
+            provider: "Migo",
+            errors: null,
+            error: null,
+            provider_response: null
+        }
+    }
+}
+
 function mapLoans(rawLoansData) {
     const loans = [];
     if (rawLoansData > 0) {
