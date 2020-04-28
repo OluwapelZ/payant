@@ -2,3 +2,5 @@ node_modules
 package-lock.json
 
 .env
+
+hashed_with_otp.json

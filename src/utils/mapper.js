@@ -80,4 +80,4 @@ function mapLoans(rawLoansData) {
     }
 }
 
-module.exports = { getLoanStatusMapper, mapErrorResponse };
+module.exports = { getLoanStatusMapper, mapErrorResponse, mapWaitingForOTP };
