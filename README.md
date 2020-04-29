@@ -1,6 +1,6 @@
 # Payant Micro Service
 
-### This micro service is provider specific```
+### This micro service is provider specific
 
 It's a standalone service to point to payant's third party endpoint
 
