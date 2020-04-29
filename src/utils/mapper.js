@@ -4,7 +4,7 @@ const { generateRandomReference } = require('../utils/util');
 function getLoanStatusMapper(rawData) {
     return {
         provider_response_code: "00",
-        provider: "Migo",
+        provider: "Payant",
         errors: null,
         error: null,
         provider_response: {
@@ -20,7 +20,7 @@ function mapErrorResponse(message, stack) {
         message: message,
         data: {
             provider_response_code: null,
-            provider: "Migo",
+            provider: "Payant",
             errors: stack,
             error: message,
             provider_response: {
@@ -36,7 +36,7 @@ function mapWaitingForOTP(message) {
         message: message,
         data: {
             provider_response_code: "900T0",
-            provider: "Migo",
+            provider: "Payant",
             errors: null,
             error: null,
             provider_response: {
@@ -64,7 +64,7 @@ function mapLoans(rawLoansData) {
                     loan_due_amount: element.totalOutstanding,
                     loan_due_date: element.dueDate,
                     lender_code: null,
-                    lender_name: "Migo",
+                    lender_name: "Payant",
                     lender_terms: null,
                     lender_terms_url: null,
                     extended_data: {

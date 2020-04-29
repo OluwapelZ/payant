@@ -1,22 +1,6 @@
 const axios = require('axios');
 const config = require('../config/config');
 
-function getLoanStatus(customerRef) {
-    return axios.get(`${config.migo_base_url}/loans`, {
-        auth: config.basic_auth,
-        params: {
-          clientNo: customerRef
-        }
-    })
-    .then(response => {
-        return response.data
-    })
-    .catch(function (error) {
-        console.log(error.message);
-        throw error
-    })
-}
-
 function sendOTP(smsDetails) {
     const requestHeaders = {
         headers: { 
@@ -32,4 +16,4 @@ function sendOTP(smsDetails) {
     })
 }
 
-module.exports = { getLoanStatus, sendOTP }
+module.exports = { sendOTP }

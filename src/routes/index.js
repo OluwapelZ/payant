@@ -1,16 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { getStatus } = require('../services/loan');
+const CONSTANTS = require('../config/constant');
 
 /* GET home page. */
 router.get('/health', function(req, res, next) {
   res.json({
-    status: true,
-    message: 'Migo service is in good condition 😀'
+    status: CONSTANTS.REQUEST_STATUSES.SUCCESSFUL,
+    message: 'Payant service is in good condition 😀'
   })
 });
-
-/* Get loan status */
-router.post('/loans', getStatus);
 
 module.exports = router;

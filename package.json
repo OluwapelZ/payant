@@ -1,5 +1,5 @@
 {
-  "name": "migo",
+  "name": "payant",
   "version": "0.0.0",
   "private": true,
   "scripts": {
@@ -15,7 +15,9 @@
     "debug": "~2.6.9",
     "express": "~4.16.1",
     "http-errors": "~1.6.3",
-    "morgan": "~1.9.1"
+    "morgan": "~1.9.1",
+    "supertest": "^4.0.2",
+    "winston": "^3.2.1"
   },
   "devDependencies": {
     "@types/jest": "^25.2.1",
