@@ -22,12 +22,11 @@ npm run dev
 ```
 
 ### With Docker
-Build payant image
+###### First run [Or when you modify docker-compose file]
 ```
-docker build -t payant .
+docker-compose up --build
 ```
-
-Run the container in detached mode (optional)
+###### On subsequent runs
 ```
-docker run -p 8082:8080 -d payant
+docker-compose up
 ```

@@ -7,7 +7,7 @@ function success(res, statusCode, message, data=null) {
     res.status(statusCode).send({data: encrypt(config.crypt_key, JSON.stringify({status: CONSTANTS.REQUEST_STATUSES.SUCCESSFUL, message: message, data: data}))});
 };
 
-function failed(res, statusCode, message, stack) {
+function failed(res, statusCode, message, stack=null) {
     res.status(statusCode).send({data: encrypt(config.crypt_key, JSON.stringify(mapErrorResponse(message, stack)))});
 };
 
