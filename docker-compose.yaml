@@ -1,0 +1,11 @@
+version: "3"
+services:
+  web:
+    image: payant
+    build: .
+    container_name: payant
+    ports:
+      - 3000
+    env_file: .env
+    volumes:
+      - ".:/src"

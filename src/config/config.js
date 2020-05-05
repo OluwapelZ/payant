@@ -1,7 +1,7 @@
 const config = {
     payant_base_url: process.env.PAYANT_BASE_URL,
-    one_pipe_sms_url: process.env.ONE_PIPE_SMS_URL,
-    basic_auth: {
+    payant_service_list: process.env.LIST_SERVICES_URL,
+    auth: {
         username: process.env.BASIC_AUTH_USERNAME,
         password: process.env.BASIC_AUTH_PASSWORD
     },

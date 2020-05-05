@@ -14,6 +14,14 @@ const CONSTANTS = {
         FAILED: 500,
         WAITING_FOR_OTP: 200,
         WRONG_AUTH_PROVIDE: 400
+    },
+    URL_PATHS: {
+        authenticate: '/users/account/authenticate',
+        list_services: '/services'
+    },
+    PAYANT_STATUS_TYPES: {
+        successful: '',
+        error: 'error'
     }
 }
 
