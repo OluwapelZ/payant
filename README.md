@@ -30,3 +30,17 @@ docker-compose up --build
 ```
 docker-compose up
 ```
+
+### Database Actions
+Database migration, rollback and seeding action commands
+
+##### Run Migrations
+```
+npm run migrate
+```
+
+##### Rollback Migrations
+```
+
+npm run rollback
+```
