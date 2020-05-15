@@ -13,9 +13,21 @@ module.exports = async (req, res, next) => {
             return e != "\u0000" ;
         });
         rawData = trimmedDated.join('');
+
+        let username = '';
+        let password = '';
+
         const requestPayload = JSON.parse(rawData);
-        const username = requestPayload.auth.secure.phone;
-        const password = requestPayload.auth.secure.password
+        if (requestPayload.auth && requestPayload.auth.secure != '') {
+            username = requestPayload.auth.secure.split(';')[0];
+            password = requestPayload.auth.secure.split(';')[1]
+        } else if (requestPayload.app_info && requestPayload.app_info.extras) {
+            username = requestPayload.app_info.extras.phone_number;
+            password = requestPayload.app_info.extras.password;
+        } else {
+            logger.error('Invalid authentication details - Unauthorized user');
+            failed(res, 401, ResponseMessages.NO_AUTH_DETAILS_PROVIDED);
+        }
 
         const authResponse = await authenticate(password, username);
         if (authResponse.status == CONSTANTS.PAYANT_STATUS_TYPES.error) {

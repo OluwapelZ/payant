@@ -3,5 +3,6 @@ module.exports = {
     FETCHED_LOAN_STATUS_SUCCESSFULLY: 'Transaction Processes Successfully',
     SUCCESSFULLY_SENT_OTP: 'Please enter the OTP sent to',
     INVALID_OTP: 'The provided otp is not valid',
-    AUTHENICATION_FAILED: 'Authentication Failed. Invalid login credentials provided',
+    AUTHENICATION_FAILED: 'Authentication Failed - Invalid login credentials provided',
+    NO_AUTH_DETAILS_PROVIDED: 'Authentication Failed - No Authentication details was provided'
 };
