@@ -4,13 +4,13 @@ const { mapProviderServices } = require('../utils/mapper');
 const CONSTANTS = require('../config/constant');
 const ResponseMessage = require('../config/response_messages');
 
-module.exports = {
-    baseService: async (req, res) => {
+class BaseService {
+    async baseService(req, res) {
         console.log('I got into the service: ', req.body.data)
         process.exit();
-    },
+    }
     
-    listProviderServices: async (req, res) => {
+    async listProviderServices(req, res) {
        try {
         const services = await listProviderServicesAPI(req.body.token);
         const mappedServices = mapProviderServices(services.data);
@@ -20,3 +20,5 @@ module.exports = {
        }
     }
 }
+
+module.exports = BaseService;

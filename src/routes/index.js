@@ -3,6 +3,7 @@ const router = express.Router();
 const CONSTANTS = require('../config/constant');
 const BaseService = require('../services/base_service')
 const authMiddleware = require('../middleware/auth');
+const baseService = new BaseService();
 
 /* GET home page. */
 router.get('/health', function(req, res, next) {
@@ -13,6 +14,6 @@ router.get('/health', function(req, res, next) {
 });
 
 // Transact options
-router.post('/transact/options', authMiddleware, BaseService.listProviderServices);
+router.post('/transact/options', authMiddleware, baseService.listProviderServices);
 
 module.exports = router;
