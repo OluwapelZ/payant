@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const CONSTANTS = require('../config/constant');
-const BaseService = require('../services/base_service')
+const CONSTANTS = require('../constants/constant');
 const authMiddleware = require('../middleware/auth');
+const BaseController = require('../controllers/base');
+const baseController = new BaseController();
 
 /* GET home page. */
 router.get('/health', function(req, res, next) {
@@ -13,6 +14,9 @@ router.get('/health', function(req, res, next) {
 });
 
 // Transact options
-router.post('/transact/options', authMiddleware, BaseService.listProviderServices);
+router.post('/transact/options', authMiddleware, baseController.listProviderProducts);
+
+//Transact
+router.post('/transact', authMiddleware, baseController.transact);
 
 module.exports = router;

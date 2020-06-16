@@ -1,15 +1,15 @@
 const Bookshelf = require('../db');
 const { snakeCaseObjectMap } = require('../utils/util');
 
-class User extends Bookshelf.Model {
+class Transaction extends Bookshelf.Model {
     get tableName() {
         return 'transaction';
     }
 
-    async create(transactionDetails) {
+    async createTransaction(transactionDetails) {
         const data = snakeCaseObjectMap(transactionDetails, (value) => {
             return value;
-        })
+        });
 
         return this.save(data, { method: 'insert' })
             .then(response => response.toJSON())
@@ -27,4 +27,4 @@ class User extends Bookshelf.Model {
     }
 }
 
-module.exports = User;
+module.exports = Transaction;
