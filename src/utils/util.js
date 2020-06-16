@@ -1,3 +1,5 @@
+const lodash = require('lodash');
+
 function generateOTP() {
     const digits = '0123456789'; 
     let OTP = ''; 
@@ -23,7 +25,7 @@ function hashPhoneNumber(phone) {
 const snakeCaseObjectMap = (modelObject, mapFn) => {
     const object = Object.assign({}, modelObject);
     return Object.keys(object).reduce((result, key) => {
-        result[snakeCase(key)] = mapFn(object[key]);
+        result[lodash.snakeCase(key)] = mapFn(object[key]);
         return result;
     }, {});
 };

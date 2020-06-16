@@ -1,6 +1,6 @@
 const { failed } = require('../utils/http_response');
-const ResponseMessages = require('../config/response_messages');
-const CONSTANTS = require('../config/constant');
+const ResponseMessages = require('../constants/response_messages');
+const CONSTANTS = require('../constants/constant');
 const logger = require('../utils/logger');
 const { decrypt, encrypt } = require('../utils/crypt');
 const config = require('../config/config');
@@ -44,5 +44,6 @@ module.exports = async (req, res, next) => {
     } catch (err) {
         logger.error(`Internal Server Error on authentication attempt: ${err}`)
         failed(res, 500, err.message, err.stack)
+        throw err;
     }
 }

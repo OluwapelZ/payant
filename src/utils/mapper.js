@@ -1,4 +1,5 @@
-const CONSTANTS = require('../config/constant');
+const CONSTANTS = require('../constants/constant');
+const config = require('../config/config');
 const { generateRandomReference } = require('../utils/util');
 
 function getLoanStatusMapper(rawData) {
@@ -46,23 +47,54 @@ function mapWaitingForOTP(message) {
     }
 }
 
-function mapProviderServices(rawData) {
-    const services = [];
-    if (rawData.length > 0) {
-        rawData.forEach(element => {
-            services.push(
+function mapServiceProducts(rawData) {
+    return {
+        provider_response_code: '00',
+        provider: config.provider_name,
+        errors: null,
+        error: null,
+        provider_response: {
+            products: mapProducts(rawData.data.productCategories),
+        },
+    };
+}
+
+function mapProducts(productsData) {
+    const productList = [];
+    if (productsData.productCategories > 0) {
+        productsData.productCategories.forEach(element => {
+            productList.push(
                 {
-                    id: element._id,
-                    name: element.name,
-                    service_categories: element.service_categories
+                    order_reference: productsData._id,
+                    biller_item_id: productsData._id,
+                    biller_item_code: element.code,
+                    biller_item_name: element.name,
+                    biller_item_description: '',
+                    biller_item_image_url: '',
+                    biller_item_prompt: '',
+                    customer_name: '',
+                    biller_item_meta: {},
+                    currency: '566',
+                    bundleCode: element.bundleCode,
+                    amount: element.amount
                 }
             )
         });
     }
 
-    return services;
+    return productList;
+}
+
+function mapTransactionDetails(reqRef, transactionRef, request, response) {
+    return {
+        onepipeRequest_ref: reqRef,
+        onepipeTransactionRef: transactionRef,
+        providerRequest: JSON.stringify(request),
+        providerStatus: response.status,
+        providerResponse: JSON.stringify(response)
+    }
 }
 
 
 
-module.exports = { getLoanStatusMapper, mapErrorResponse, mapWaitingForOTP, mapProviderServices };
+module.exports = { getLoanStatusMapper, mapErrorResponse, mapWaitingForOTP, mapServiceProducts, mapTransactionDetails };
