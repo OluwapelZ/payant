@@ -6,13 +6,10 @@ const logger = require('../utils/logger');
 const BaseService = require('../services/base');
 
 class BaseController {
-    constructor() {
-        this.baseService = new BaseService();
-    }
 
     async listProviderProducts(req, res) {
         try {
-            const products = await this.baseService.listProviderServices(req.body);
+            const products = await new BaseService().listProviderServices(req.body);
             optionsSuccess(res, CONSTANTS.STATUS_CODES.SUCCESS, products)
         } catch (err) {
             if (err instanceof InvalidRequestModeError) {

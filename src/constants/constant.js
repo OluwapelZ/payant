@@ -26,7 +26,7 @@ const CONSTANTS = {
     },
     URL_PATHS: {
         authenticate: '/users/account/authenticate',
-        list_services_products: '/services/category/',
+        list_services_products: '/services/category',
         airtime: '/bills/pay/airtime',
         data: '/bills/pay/data',
         buy_scratch_card: '/bills/pay/scratch-card',
@@ -42,7 +42,7 @@ const CONSTANTS = {
     },
     SERVICE_STATUS_URL: {
         BUY_AIRTIME: "http://api.mydomain.com/airtime_callback"
-    }
+    },
 }
 
 module.exports = CONSTANTS;

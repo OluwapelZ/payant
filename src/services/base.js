@@ -1,6 +1,6 @@
 const { listServiceProductsAPI, buyAirtime, buyData } = require('../utils/third_party_api_call');
 const { mapServiceProducts, mapTransactionDetails } = require('../utils/mapper');
-const { InvalidRequestModeError, BillerProductError, ServiceProductCategoryError } = require('../error');
+const { InvalidRequestModeError, BillerProductError, ServiceProductCategoryError, BillerNotSupportedError } = require('../error');
 const CONSTANTS = require('../constants/constant');
 const config = require('../config/config');
 const Transaction = require('../models/transaction');
@@ -13,29 +13,36 @@ class BaseService {
     }
     
     async listProviderServices(requestPayload) {
-        if (requestPayload.auth.route_mode != CONSTANTS.REQUEST_TYPES.OPTIONS) {
+        const request = requestPayload.data;
+        if (request.auth.route_mode != CONSTANTS.REQUEST_TYPES.OPTIONS) {
             logger.error('Request mode has to be passed as options to make an option call');
             throw new InvalidRequestModeError('Request mode has to be passed as options to make an option call');
         }
 
-        if (!requestPayload.transaction.details || !requestPayload.transaction.details.biller_id) {
+        if (!request.transaction.details || !request.transaction.details.biller_id) {
             logger.error('Product biller id has to be passed in the details object [nested in transaction object]');
             throw new BillerProductError('Product biller id has to be passed in details object [nested in transaction object]');
         }
 
-        const billerId = config.service_biller_ids[`${requestPayload.request_type}`][`${requestPayload.transaction.details.biller_id}`];
-        const services = await listServiceProductsAPI(req.body.token, billerId);
+        const billerId = config.service_biller_ids[`${request.request_type}`][`${request.transaction.details.biller_id}`];
 
-        if (services.status == CONSTANTS.PAYANT_STATUS_TYPES.error) {
-            logger.error(`An error occured on attempt to fetch "${requestPayload.request_type}" service products: ${services.message}`);
-            throw new ServiceProductCategoryError(`An error occured on attempt to fetch "${requestPayload.request_type}" service products`);
+        if (!billerId) {
+            logger.error(`Provider does not support "${request.transaction.details.biller_id}" biller`);
+            throw new BillerNotSupportedError(`Provider does not support "${request.transaction.details.biller_id}" biller`);
         }
 
-        const mappedServices = mapServiceProducts(services);
+        const services = await listServiceProductsAPI(requestPayload.token, billerId);
+
+        if (services.status == CONSTANTS.PAYANT_STATUS_TYPES.error) {
+            logger.error(`An error occured on attempt to fetch "${request.request_type}" service products: ${services.message}`);
+            throw new ServiceProductCategoryError(`An error occured on attempt to fetch "${request.request_type}" service products`);
+        }
+
+        const mappedServices = mapServiceProducts(services.data);
 
         //Persist transaction request
-        const transactionDetails = mapTransactionDetails(req.body.data.request_ref, req.body.data.transaction.transaction_ref, req.body.data, services)
-        // await this.storeTransaction(transactionDetails);
+        const transactionDetails = mapTransactionDetails(request.request_ref, request.transaction.transaction_ref, request, services)
+        await this.storeTransaction(transactionDetails);
 
         return mappedServices;
     }
@@ -53,8 +60,7 @@ class BaseService {
      * @param {request paylaod && response payload} transactionDetails 
      */
     async storeTransaction(transactionDetails) {
-        const transaction = new Transaction();
-        await transaction.createTransaction(transactionDetails);
+        await new Transaction().createTransaction(transactionDetails);
     }
 }
 
