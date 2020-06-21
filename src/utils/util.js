@@ -10,7 +10,7 @@ function generateOTP() {
 }
 
 function generateRandomReference() {
-    return `${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`;
+    return `PAYANT-${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`;
 }
 
 function hashPhoneNumber(phone) {

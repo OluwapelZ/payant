@@ -6,7 +6,7 @@ jest.mock('../../src/utils/third_party_api_call', () => {
     return {
         authenticate: jest.fn()
     }
-})
+});
 
 describe('Authentication middleware', () => {
     const next = jest.fn();

@@ -56,8 +56,8 @@ function listServiceProductsAPI(token, billerId) {
         }
     };
     requestHeaders.headers['Content-Type'] = 'application/json';
-
-    return axios.post(`${config.payant_base_url}${CONSTANTS.URL_PATHS.list_services_products}${billerId}/products`, requestHeaders)
+     
+    return axios.post(`${config.payant_base_url}${CONSTANTS.URL_PATHS.list_services_products}/${billerId}/products`, {}, requestHeaders)
     .then(response => response.data)
     .catch(function (err) {
         logger.error(`Error occurred on authenticating user: ${err.message}`);

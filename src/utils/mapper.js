@@ -2,19 +2,6 @@ const CONSTANTS = require('../constants/constant');
 const config = require('../config/config');
 const { generateRandomReference } = require('../utils/util');
 
-function getLoanStatusMapper(rawData) {
-    return {
-        provider_response_code: "00",
-        provider: "Payant",
-        errors: null,
-        error: null,
-        provider_response: {
-            loans: mapLoans(rawData),
-            reference: generateRandomReference()
-        }
-    };
-}
-
 function mapErrorResponse(message, stack) {
     return {
         status: CONSTANTS.REQUEST_STATUSES.FAILED,
@@ -54,20 +41,22 @@ function mapServiceProducts(rawData) {
         errors: null,
         error: null,
         provider_response: {
-            products: mapProducts(rawData.data.productCategories),
+            products: mapProducts(rawData),
         },
+        reference: generateRandomReference(),
+        meta: {}
     };
 }
 
 function mapProducts(productsData) {
     const productList = [];
-    if (productsData.productCategories > 0) {
+    if (productsData.productCategories.length > 0) {
         productsData.productCategories.forEach(element => {
             productList.push(
                 {
                     order_reference: productsData._id,
                     biller_item_id: productsData._id,
-                    biller_item_code: element.code,
+                    biller_item_code: element.bundleCode,
                     biller_item_name: element.name,
                     biller_item_description: '',
                     biller_item_image_url: '',
@@ -75,10 +64,11 @@ function mapProducts(productsData) {
                     customer_name: '',
                     biller_item_meta: {},
                     currency: '566',
-                    bundleCode: element.bundleCode,
-                    amount: element.amount
+                    amount: element.amount,
+                    terms: null,
+                    terms_url: null,
                 }
-            )
+            );
         });
     }
 
@@ -97,4 +87,4 @@ function mapTransactionDetails(reqRef, transactionRef, request, response) {
 
 
 
-module.exports = { getLoanStatusMapper, mapErrorResponse, mapWaitingForOTP, mapServiceProducts, mapTransactionDetails };
+module.exports = { mapErrorResponse, mapWaitingForOTP, mapServiceProducts, mapTransactionDetails };

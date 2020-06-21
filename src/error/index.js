@@ -6,4 +6,6 @@ const BillerProductError = createCustomError('BillerProductError', { code: 'BILL
 
 const ServiceProductCategoryError = createCustomError('ServiceProductCategoryError', {  code: 'SERVICE_PRODUCT_CATEGORY_ERROR' });
 
-module.exports = { InvalidRequestModeError, BillerProductError, ServiceProductCategoryError };
+const BillerNotSupportedError = createCustomError('BillerNotsupportedError', { code: 'BILLER_NOT_SUPPORTED_ERROR' });
+
+module.exports = { InvalidRequestModeError, BillerProductError, ServiceProductCategoryError, BillerNotSupportedError };

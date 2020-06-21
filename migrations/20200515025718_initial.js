@@ -7,8 +7,8 @@ exports.up = function(knex) {
                 table.increments().primary();
                 table.string('onepipe_request_ref');
                 table.string('onepipe_transaction_ref').notNullable();
-                table.string('provider_request');
-                table.string('provider_response');
+                table.text('provider_request', 'longtext');
+                table.text('provider_response', 'longtext');
                 table.string('provider_status');
                 table.string('provider_transaction_ref');
             })
