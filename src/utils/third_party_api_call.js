@@ -71,7 +71,7 @@ function listServiceProductsAPI(token, billerId) {
  * @param {string} amount 
  * @param {string} phoneNumber 
  */
-function buyAirtime(token, amount, phoneNumber) {
+function payantServiceApiCall(token, url_path, data) {
     const requestHeaders = {
         headers: {
             Authorization: token
@@ -79,14 +79,7 @@ function buyAirtime(token, amount, phoneNumber) {
     };
     requestHeaders.headers['Content-Type'] = 'application/json';
 
-    const postDetails = {
-        amount: amount,
-        service_category_id: CONSTANTS.SERVICE_CATEGORY_ID.BUY_AIRTIME,
-        phonenumber: phoneNumber,
-        status_url: CONSTANTS.SERVICE_STATUS_URL.BUY_AIRTIME
-    }
-
-    return axios.post(`${config.payant_base_url}${CONSTANTS.URL_PATHS.airtime}`, postDetails, requestHeaders)
+    return axios.post(`${config.payant_base_url}${url_path}`, data, requestHeaders)
     .then(response => response.data)
     .catch(function (err) {
         logger.error(`Error occurred on purchasing airtime: ${err.message}`);
@@ -94,29 +87,9 @@ function buyAirtime(token, amount, phoneNumber) {
     })
 }
 
-function buyData(token, amount, bundleCode, account) {
-    const requestHeaders = {
-        headers: {
-            Authorization: token
-        }
-    };
-    requestHeaders.headers['Content-Type'] = 'application/json';
-
-    const requestPayload = {
-        amount: amount,
-        service_category_id: CONSTANTS.SERVICE_CATEGORY_ID.BUY_DATA,
-        account: account,
-        bundleCode: bundleCode,
-        quantity: quantity,
-        status_url: CONSTANTS.SERVICE_STATUS_URL.BUY_AIRTIME
-    }
-
-    return axios.post(`${config.payant_base_url}${CONSTANTS.URL_PATHS.data}`, requestPayload, requestHeaders)
-    .then(response => response.data)
-    .catch(function (err) {
-        logger.error(`Error occurred on purchasing data: ${err.message}`);
-        throw err;
-    })
+module.exports = { 
+    sendOTP,
+    authenticate,
+    listServiceProductsAPI,
+    payantServiceApiCall
 }
-
-module.exports = { sendOTP, authenticate, listServiceProductsAPI, buyAirtime, buyData }

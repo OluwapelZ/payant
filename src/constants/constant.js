@@ -30,7 +30,9 @@ const CONSTANTS = {
         airtime: '/bills/pay/airtime',
         data: '/bills/pay/data',
         buy_scratch_card: '/bills/pay/scratch-card',
-        buy_electricity: '/bills/pay/electricity'
+        buy_electricity: '/bills/pay/electricity',
+        buy_tv: '/bills/pay/tv',
+        look_up_nin: '/verification'
     },
     PAYANT_STATUS_TYPES: {
         successful: 'success',

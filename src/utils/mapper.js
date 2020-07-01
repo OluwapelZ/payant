@@ -51,10 +51,11 @@ function mapServiceProducts(rawData) {
 function mapProducts(productsData) {
     const productList = [];
     if (productsData.productCategories.length > 0) {
+        const orderReference = generateRandomReference();
         productsData.productCategories.forEach(element => {
             productList.push(
                 {
-                    order_reference: productsData._id,
+                    order_reference: orderReference,
                     biller_item_id: productsData._id,
                     biller_item_code: element.bundleCode,
                     biller_item_name: element.name,
@@ -85,6 +86,60 @@ function mapTransactionDetails(reqRef, transactionRef, request, response) {
     }
 }
 
+function mapAirtimeResponse() {
+    return {
+
+    };
+}
+
+function mapDataResponse() {
+    return {
+
+    };
+}
+
+function mapElectricityResponse() {
+    return {
+
+    };
+}
+
+function mapTvResponse() {
+    return {
+
+    };
+}
+
+function mapScratchCardResponse() {
+    return {
+
+    };
+}
+
+function mapMinNinResponse() {
+    return {
+
+    };
+}
+
+function mapMidNinResponse() {
+    return {
+
+    }
+}
 
 
-module.exports = { mapErrorResponse, mapWaitingForOTP, mapServiceProducts, mapTransactionDetails };
+
+module.exports = {
+    mapErrorResponse,
+    mapWaitingForOTP,
+    mapServiceProducts,
+    mapTransactionDetails,
+    mapAirtimeResponse,
+    mapDataResponse,
+    mapMinNinResponse,
+    mapMidNinResponse,
+    mapElectricityResponse,
+    mapTvResponse,
+    mapScratchCardResponse
+};
