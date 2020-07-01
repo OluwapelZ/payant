@@ -1,0 +1,3 @@
+describe('Scratch Card Service', () => {
+
+});
