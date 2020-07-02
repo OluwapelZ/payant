@@ -25,7 +25,7 @@ module.exports = async (req, res, next) => {
 
         if (requestPayload.auth && requestPayload.auth.secure != '') {
             username = requestPayload.auth.secure.split(';')[0];
-            password = requestPayload.auth.secure.split(';')[1]
+            password = requestPayload.auth.secure.split(';')[1];
         } else {
             username = requestPayload.transaction.app_info.extras.phone_number;
             password = requestPayload.transaction.app_info.extras.password;

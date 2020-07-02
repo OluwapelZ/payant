@@ -12,11 +12,14 @@ const BillerNotSupportedError = createCustomError('BillerNotsupportedError', { c
 
 const ServiceNotImplementedError = createCustomError('ServiceNotImplementedError', {  code: 'SERVICE_NOT_IMPLEMENTED_ERROR' });
 
+const ProviderResponseError = createCustomError('ProviderResponseError', { code: 'PROVIDER_RESPONSE_ERROR' });
+
 module.exports = {
     InvalidRequestModeError,
     BillerProductError,
     ServiceProductCategoryError,
     BillerNotSupportedError,
     ServiceNotImplementedError,
-    InvalidParamsError
+    InvalidParamsError,
+    ProviderResponseError
 };

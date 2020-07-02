@@ -1,6 +1,6 @@
 const config = {
     payant_base_url: process.env.PAYANT_BASE_URL,
-    payant_identity_verification_base_url: process.com.IDENTITY_BASE_URL,
+    payant_identity_verification_base_url: process.env.IDENTITY_BASE_URL,
     payant_service_list: process.env.LIST_SERVICES_URL,
     auth: {
         username: process.env.BASIC_AUTH_USERNAME,

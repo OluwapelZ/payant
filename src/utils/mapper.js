@@ -86,9 +86,21 @@ function mapTransactionDetails(reqRef, transactionRef, request, response) {
     }
 }
 
-function mapAirtimeResponse() {
+function mapAirtimeResponse(responsePayload, amount) {
     return {
-
+        provider_response_code: "00",
+        provider: config.provider_name,
+        errors: null,
+        error: null,
+        provider_response: {
+            payment_status: "Processing",
+            fulfillment_status: "Succesful",
+            transaction_final_amount: (Number(amount) * 100), //In kobo
+            transaction_fee: "0.00",
+            narration: (responsePayload.text) ? responsePayload.text : "",
+            reference: generateRandomReference(),
+            "meta":{}
+        }
     };
 }
 
