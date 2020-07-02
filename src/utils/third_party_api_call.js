@@ -4,20 +4,20 @@ const CONSTANTS = require('../constants/constant');
 const logger = require('./logger');
 
 /**
- * Send otp to user with user with abstract argument
+ * Get Transaction status
  * @param {phone, message} smsDetails 
  */
-function sendOTP(smsDetails) {
+function getTransactionStatus(token, refCode) {
     const requestHeaders = {
         headers: { 
-            Authorization: `Bearer ${config.one_pipe_sms_url}`,
+            Authorization: token,
         }
     };
 
-    return axios.post(config.one_pipe_sms_url, smsDetails, requestHeaders)
+    return axios.get(`${config.payant_base_url}/transactions/${refCode}`, requestHeaders)
     .then(response => response.data)
     .catch(function (err) {
-        console.log(err);
+        logger.error(`Error verifying transaction status: ${err.message}`);
         throw err;
     })
 }
@@ -68,10 +68,10 @@ function listServiceProductsAPI(token, billerId) {
 /**
  * Send request to purchase airtime
  * @param {string} token 
- * @param {string} amount 
- * @param {string} phoneNumber 
+ * @param {string} url_path 
+ * @param {object} requestPayload 
  */
-function payantServiceApiCall(token, url_path, data) {
+function payantServiceApiCall(token, url_path, requestPayload, callback) {
     const requestHeaders = {
         headers: {
             Authorization: token
@@ -79,8 +79,8 @@ function payantServiceApiCall(token, url_path, data) {
     };
     requestHeaders.headers['Content-Type'] = 'application/json';
 
-    return axios.post(`${config.payant_base_url}${url_path}`, data, requestHeaders)
-    .then(response => response.data)
+    return axios.post(`${config.payant_base_url}${url_path}`, requestPayload, requestHeaders)
+    .then(response => callback(response.data))
     .catch(function (err) {
         logger.error(`Error occurred on purchasing airtime: ${err.message}`);
         throw err;
@@ -88,7 +88,7 @@ function payantServiceApiCall(token, url_path, data) {
 }
 
 module.exports = { 
-    sendOTP,
+    getTransactionStatus,
     authenticate,
     listServiceProductsAPI,
     payantServiceApiCall

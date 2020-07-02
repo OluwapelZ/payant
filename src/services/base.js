@@ -1,4 +1,4 @@
-const { listServiceProductsAPI, payantServiceApiCall } = require('../utils/third_party_api_call');
+const { listServiceProductsAPI, payantServiceApiCall, getTransactionStatus } = require('../utils/third_party_api_call');
 const {
     mapServiceProducts,
     mapTransactionDetails,
@@ -11,12 +11,8 @@ const {
     mapTvResponse
 } = require('../utils/mapper');
 const {
-    InvalidRequestModeError,
-    BillerProductError,
-    ServiceProductCategoryError,
-    BillerNotSupportedError,
-    ServiceNotImplementedError,
-    InvalidParamsError
+    InvalidRequestModeError, BillerProductError, ServiceProductCategoryError, BillerNotSupportedError,
+    ServiceNotImplementedError, InvalidParamsError, ProviderResponseError,
 } = require('../error');
 const CONSTANTS = require('../constants/constant');
 const config = require('../config/config');
@@ -26,37 +22,42 @@ const logger = require('../utils/logger');
 class BaseService {
     async baseService(requestPayload) {
         const request = requestPayload.data;
-        let message = '';
         let serviceRawResponse = null;
         let mappedServicesResponse = null;
 
+        if (request.auth.route_mode != CONSTANTS.REQUEST_TYPES.TRANSACT) {
+            logger.error('Request mode has to be passed as transact to make a service call');
+            throw new InvalidRequestModeError('Request mode has to be passed as transact to make a service call');
+        }
+
         switch(request.request_type) {
             case 'buy_airtime':
-                serviceRawResponse = this.buyAirtimeService(request, requestPayload.token);
-                mappedServicesResponse = mapAirtimeResponse(serviceRawResponse);
+                const response = await this.buyAirtimeService(request, requestPayload.token);
+                serviceRawResponse = response.data.response_payload;
+                mappedServicesResponse = mapAirtimeResponse(serviceRawResponse.data.msg.results, response.data.amount);
                 break;
             case 'buy_data':
-                serviceRawResponse = this.buyDataService(request, requestPayload.token);
+                serviceRawResponse = await this.buyDataService(request, requestPayload.token);
                 mappedServicesResponse = mapDataResponse(serviceRawResponse)
                 break;
             case 'pay_electricity':
-                serviceRawResponse = this.buyElectricityService(request, requestPayload.token);
+                serviceRawResponse = await this.buyElectricityService(request, requestPayload.token);
                 mappedServicesResponse = mapElectricityResponse(serviceRawResponse);
                 break;
             case 'pay_tv':
-                serviceRawResponse = this.buyTvService(request, requestPayload.token);
+                serviceRawResponse = await this.buyTvService(request, requestPayload.token);
                 mappedServicesResponse = mapTvResponse(serviceRawResponse);
                 break;
             case 'buy_scratch_card':
-                serviceRawResponse = this.buyScratchCardService(request, requestPayload.token);
+                serviceRawResponse = await this.buyScratchCardService(request, requestPayload.token);
                 mappedServicesResponse = mapScratchCardResponse(serviceRawResponse);
                 break;
             case 'lookup_nin_min':
-                serviceRawResponse = this.lookupNinMinService(request, requestPayload.token);
+                serviceRawResponse = await this.lookupNinMinService(request, requestPayload.token);
                 mappedServicesResponse = mapMinNinResponse(serviceRawResponse);
                 break;
             case 'lookup_nin_mid':
-                serviceRawResponse = this.lookupNinMidService(request, requestPayload.token);
+                serviceRawResponse = await this.lookupNinMidService(request, requestPayload.token);
                 mappedServicesResponse = mapMidNinResponse(serviceRawResponse);
                 break;
             default:
@@ -67,7 +68,7 @@ class BaseService {
         const transactionDetails = mapTransactionDetails(request.request_ref, request.transaction.transaction_ref, request, serviceRawResponse);
         await this.storeTransaction(transactionDetails);
 
-        return {mappedServicesResponse, message};
+        return mappedServicesResponse;
     }
     
     async listProviderServices(requestPayload) {
@@ -106,7 +107,12 @@ class BaseService {
     }
 
     async buyAirtimeService(requestPayload, token) {
-        if(!request.transaction.details || !requestPayload.transaction.details.telco_code) {
+        if(!config.service_biller_ids.buy_airtime.hasOwnProperty(requestPayload.transaction.details.telco_code)) {
+            logger.error(`Service "buy_airtime" does not support biller: ${requestPayload.transaction.details.telco_code}`);
+            throw new BillerNotSupportedError(`Biller ${requestPayload.transaction.details.telco_code} is not supported by service buy_airtime`)
+        }
+        
+        if(!requestPayload.transaction.details || !requestPayload.transaction.details.telco_code) {
             logger.error(`Telco code (biller id) has to be passed in details object nested in transaction object`);
             throw new InvalidParamsError('Biller id (telco_code) is not provided');
         }
@@ -116,11 +122,6 @@ class BaseService {
             throw new InvalidParamsError('Phone number or amount is not provided');
         }
 
-        if(!config.service_biller_ids.buy_airtime.hasOwnProperty(requestPayload.transaction.details.telco_code)) {
-            logger.error(`Service "buy_airtime" does not support biller: ${requestPayload.transaction.details.telco_code}`);
-            throw new BillerNotSupportedError(`Biller ${requestPayload.transaction.details.telco_code} is not supported by service buy_airtime`)
-        }
-
         const postDetails = {
             amount: requestPayload.transaction.amount,
             service_category_id: config.service_biller_ids.buy_airtime[`${requestPayload.transaction.details.telco_code}`],
@@ -128,7 +129,22 @@ class BaseService {
             status_url: CONSTANTS.SERVICE_STATUS_URL.BUY_AIRTIME
         };
 
-        return await payantServiceApiCall(token, CONSTANTS.URL_PATHS.airtime, postDetails);
+        return payantServiceApiCall(token, CONSTANTS.URL_PATHS.airtime, postDetails, (data) => {
+            if (data.status === CONSTANTS.PAYANT_STATUS_TYPES.error) {
+                logger.error(`Provider error response on attempt to make airtime purchase: ${data.message}`);
+                throw new ProviderResponseError(`Provider error response on attempt to make airtime purchase: ${data.message}`);
+            }
+
+            const referenceCode = data.transaction.response_payload.data.msg.results.refCode;
+            const verifiedTransaction = getTransactionStatus(token, referenceCode);
+
+            if (verifiedTransaction.status === CONSTANTS.PAYANT_STATUS_TYPES.error) {
+                logger.error(`Provider error response on attempt to fetch airtime purchase status: ${data.message}`);
+                throw new ProviderResponseError(`Provider error response on attempt to fetch airtime purchase status: ${data.message}`);
+            }
+
+            return verifiedTransaction;
+        });
     }
 
     async buyDataService(requestPayload, token) {

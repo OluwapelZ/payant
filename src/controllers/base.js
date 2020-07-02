@@ -46,9 +46,9 @@ class BaseController {
 
     async transact(req, res) {
         try {
-            const {serviceResponse, message} = await new BaseService().baseService(req.body);
-            success(res, CONSTANTS.STATUS_CODES.SUCCESS, message, serviceResponse);
-        } catch (error) {
+            const serviceResponse = await new BaseService().baseService(req.body);
+            success(res, CONSTANTS.STATUS_CODES.SUCCESS, ResponseMessage.TRANSACTION_SUCCESSFUL, serviceResponse);
+        } catch (err) {
             if (err instanceof InvalidParamsError) {
                 failed(res, 500, err.message, err.stack);
                 throw err;
