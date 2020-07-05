@@ -4,20 +4,20 @@ const CONSTANTS = require('../constants/constant');
 const logger = require('./logger');
 
 /**
- * Send otp to user with user with abstract argument
+ * Get Transaction status
  * @param {phone, message} smsDetails 
  */
-function sendOTP(smsDetails) {
+function getTransactionStatus(token, refCode) {
     const requestHeaders = {
         headers: { 
-            Authorization: `Bearer ${config.one_pipe_sms_url}`,
+            Authorization: token,
         }
     };
 
-    return axios.post(config.one_pipe_sms_url, smsDetails, requestHeaders)
+    return axios.get(`${config.payant_base_url}/transactions/${refCode}`, requestHeaders)
     .then(response => response.data)
     .catch(function (err) {
-        console.log(err);
+        logger.error(`Error verifying transaction status: ${err.message}`);
         throw err;
     })
 }
@@ -56,8 +56,8 @@ function listServiceProductsAPI(token, billerId) {
         }
     };
     requestHeaders.headers['Content-Type'] = 'application/json';
-
-    return axios.post(`${config.payant_base_url}${CONSTANTS.URL_PATHS.list_services_products}${billerId}/products`, requestHeaders)
+     
+    return axios.post(`${config.payant_base_url}${CONSTANTS.URL_PATHS.list_services_products}/${billerId}/products`, {}, requestHeaders)
     .then(response => response.data)
     .catch(function (err) {
         logger.error(`Error occurred on authenticating user: ${err.message}`);
@@ -68,10 +68,10 @@ function listServiceProductsAPI(token, billerId) {
 /**
  * Send request to purchase airtime
  * @param {string} token 
- * @param {string} amount 
- * @param {string} phoneNumber 
+ * @param {string} url_path 
+ * @param {object} requestPayload 
  */
-function buyAirtime(token, amount, phoneNumber) {
+function payantServiceApiCall(token, url_path, requestPayload, callback) {
     const requestHeaders = {
         headers: {
             Authorization: token
@@ -79,14 +79,27 @@ function buyAirtime(token, amount, phoneNumber) {
     };
     requestHeaders.headers['Content-Type'] = 'application/json';
 
-    const postDetails = {
-        amount: amount,
-        service_category_id: CONSTANTS.SERVICE_CATEGORY_ID.BUY_AIRTIME,
-        phonenumber: phoneNumber,
-        status_url: CONSTANTS.SERVICE_STATUS_URL.BUY_AIRTIME
-    }
+    return axios.post(`${config.payant_base_url}${url_path}`, requestPayload, requestHeaders)
+    .then(response => (typeof callback !== 'undefined') ? callback(response.data) : response.data)
+    .catch(function (err) {
+        logger.error(`Error occurred on purchasing airtime: ${err.message}`);
+        throw err;
+    })
+}
 
-    return axios.post(`${config.payant_base_url}${CONSTANTS.URL_PATHS.airtime}`, postDetails, requestHeaders)
+/**
+ * Send request to purchase airtime
+ * @param {object} requestPayload 
+ */
+function payantIdentityApiCall(requestPayload) {
+    const requestHeaders = {
+        headers: {
+            Authorization: `Bearer ${config.payant_identity_api_key}`
+        }
+    };
+    requestHeaders.headers['Content-Type'] = 'application/json';
+
+    return axios.post(`${config.payant_identity_verification_base_url}/verification`, requestPayload, requestHeaders)
     .then(response => response.data)
     .catch(function (err) {
         logger.error(`Error occurred on purchasing airtime: ${err.message}`);
@@ -94,29 +107,30 @@ function buyAirtime(token, amount, phoneNumber) {
     })
 }
 
-function buyData(token, amount, bundleCode, account) {
+/**
+ * Send otp to provided number
+ * @param {object} smsDetails 
+ */
+function sendOTP(smsDetails) {
     const requestHeaders = {
-        headers: {
-            Authorization: token
+        headers: { 
+            Authorization: `Bearer ${config.one_pipe_sms_auth}`,
         }
     };
-    requestHeaders.headers['Content-Type'] = 'application/json';
 
-    const requestPayload = {
-        amount: amount,
-        service_category_id: CONSTANTS.SERVICE_CATEGORY_ID.BUY_DATA,
-        account: account,
-        bundleCode: bundleCode,
-        quantity: quantity,
-        status_url: CONSTANTS.SERVICE_STATUS_URL.BUY_AIRTIME
-    }
-
-    return axios.post(`${config.payant_base_url}${CONSTANTS.URL_PATHS.data}`, requestPayload, requestHeaders)
+    return axios.post(config.one_pipe_sms_url, smsDetails, requestHeaders)
     .then(response => response.data)
-    .catch(function (err) {
-        logger.error(`Error occurred on purchasing data: ${err.message}`);
-        throw err;
+    .catch(function (error) {
+        console.log(errror);
+        throw error;
     })
 }
 
-module.exports = { sendOTP, authenticate, listServiceProductsAPI, buyAirtime, buyData }
+module.exports = { 
+    getTransactionStatus,
+    authenticate,
+    listServiceProductsAPI,
+    payantServiceApiCall,
+    sendOTP,
+    payantIdentityApiCall
+}

@@ -1,7 +1,7 @@
 const CONSTANTS = {
     REQUEST_STATUSES: {
         SUCCESSFUL: 'Successful',
-        FAILED: 'Failed',
+        FAILED: 'Error',
         WAITING_FOR_OTP: 'WaitingForOTP',
         OPTIONS_DELIVERED: 'OptionsDelivered',
     },
@@ -26,11 +26,14 @@ const CONSTANTS = {
     },
     URL_PATHS: {
         authenticate: '/users/account/authenticate',
-        list_services_products: '/services/category/',
+        list_services_products: '/services/category',
         airtime: '/bills/pay/airtime',
         data: '/bills/pay/data',
         buy_scratch_card: '/bills/pay/scratch-card',
-        buy_electricity: '/bills/pay/electricity'
+        buy_electricity: '/bills/pay/electricity',
+        buy_tv: '/bills/pay/tv',
+        look_up_nin: '/verification',
+        verify: 'verify'
     },
     PAYANT_STATUS_TYPES: {
         successful: 'success',
@@ -42,7 +45,7 @@ const CONSTANTS = {
     },
     SERVICE_STATUS_URL: {
         BUY_AIRTIME: "http://api.mydomain.com/airtime_callback"
-    }
+    },
 }
 
 module.exports = CONSTANTS;

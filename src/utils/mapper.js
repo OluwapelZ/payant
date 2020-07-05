@@ -2,19 +2,6 @@ const CONSTANTS = require('../constants/constant');
 const config = require('../config/config');
 const { generateRandomReference } = require('../utils/util');
 
-function getLoanStatusMapper(rawData) {
-    return {
-        provider_response_code: "00",
-        provider: "Payant",
-        errors: null,
-        error: null,
-        provider_response: {
-            loans: mapLoans(rawData),
-            reference: generateRandomReference()
-        }
-    };
-}
-
 function mapErrorResponse(message, stack) {
     return {
         status: CONSTANTS.REQUEST_STATUSES.FAILED,
@@ -37,37 +24,37 @@ function mapWaitingForOTP(message) {
         message: message,
         data: {
             provider_response_code: "900T0",
-            provider: "Payant",
+            provider: "Beeceptor",
             errors: null,
             error: null,
-            provider_response: {
-                reference: generateRandomReference()
-            }
+            provider_response: null
         }
     }
 }
 
-function mapServiceProducts(rawData) {
+function mapServiceProducts(rawData, orderReference) {
     return {
         provider_response_code: '00',
         provider: config.provider_name,
         errors: null,
         error: null,
         provider_response: {
-            products: mapProducts(rawData.data.productCategories),
+            products: mapProducts(rawData, orderReference),
         },
+        reference: generateRandomReference(),
+        meta: {}
     };
 }
 
-function mapProducts(productsData) {
+function mapProducts(productsData, orderReference) {
     const productList = [];
-    if (productsData.productCategories > 0) {
+    if (productsData.productCategories.length > 0) {
         productsData.productCategories.forEach(element => {
             productList.push(
                 {
-                    order_reference: productsData._id,
+                    order_reference: orderReference,
                     biller_item_id: productsData._id,
-                    biller_item_code: element.code,
+                    biller_item_code: element.bundleCode,
                     biller_item_name: element.name,
                     biller_item_description: '',
                     biller_item_image_url: '',
@@ -75,26 +62,136 @@ function mapProducts(productsData) {
                     customer_name: '',
                     biller_item_meta: {},
                     currency: '566',
-                    bundleCode: element.bundleCode,
-                    amount: element.amount
+                    amount: element.amount,
+                    terms: null,
+                    terms_url: null,
                 }
-            )
+            );
         });
     }
 
     return productList;
 }
 
-function mapTransactionDetails(reqRef, transactionRef, request, response) {
+function mapTransactionDetails(reqRef, transactionRef, request, response, requestMode, orderRef, isOrderRefActive, otp) {
     return {
-        onepipeRequest_ref: reqRef,
+        onepipeRequestRef: reqRef,
         onepipeTransactionRef: transactionRef,
         providerRequest: JSON.stringify(request),
         providerStatus: response.status,
-        providerResponse: JSON.stringify(response)
+        providerResponse: JSON.stringify(response),
+        orderReference: orderRef,
+        isOrderActive: isOrderRefActive,
+        requestMode,
+        otp
+    }
+}
+
+function mapAirtimeResponse(responsePayload, amount) {
+    return {
+        provider_response_code: "00",
+        provider: config.provider_name,
+        errors: null,
+        error: null,
+        provider_response: {
+            payment_status: "Processing",
+            fulfillment_status: "Succesful",
+            transaction_final_amount: (Number(amount) * 100), //In kobo
+            transaction_fee: "0.00",
+            narration: (responsePayload.text) ? responsePayload.text : "",
+            reference: generateRandomReference(),
+            "meta":{}
+        }
+    };
+}
+
+function mapDataResponse() {
+    return {
+        
+    };
+}
+
+function mapElectricityResponse(responsePayload) {
+    return {
+        provider_response_code: "00",
+        provider: "Payant",
+        errors: null,
+        error: null,
+        provider_response: {
+        reference: generateRandomReference(),
+        payment_status: "Successful",
+        fulfillment_status: "Succesful",
+        transaction_final_amount: responsePayload.amount,//in kobo
+        transaction_fee: 0.00,
+        pin_code: responsePayload.pin.pinCode,
+        pin_serial_number: responsePayload.pin.serialNumber,
+        narration: "Electricity subscription was successful"
+        }
+    };
+}
+
+function mapTvResponse() {
+    return {
+
+    };
+}
+
+function mapScratchCardResponse() {
+    return {
+
+    };
+}
+
+function mapMinNinResponse(identityResponse, orderReference) {
+    return {
+        provider_response_code: "00",
+        provider: "Payant",
+        errors: null,
+        error: null,
+        provider_response: {
+            nin: identityResponse.data.nin,
+            first_name: identityResponse.data.firstname,
+            middle_name: identityResponse.data.middlename,
+            last_name: identityResponse.data.surname,
+            dob: identityResponse.data.birthdate,
+            reference: orderReference,
+            meta: {}
+        }
+    };
+}
+
+function mapMidNinResponse(identityResponse, orderReference) {
+    return {
+        provider_response_code: "00",
+        provider: "Payant",
+        errors: null,
+        error: null,
+        provider_response: {
+            nin: identityResponse.data.nin,
+            first_name: identityResponse.data.firstname,
+            middle_name: identityResponse.data.middlename,
+            last_name: identityResponse.data.surname,
+            dob: identityResponse.data.birthdate,
+            phone_number1: identityResponse.data.telephoneno,
+            phone_number2: "",
+            reference: orderReference,
+            meta: {}
+        }
     }
 }
 
 
 
-module.exports = { getLoanStatusMapper, mapErrorResponse, mapWaitingForOTP, mapServiceProducts, mapTransactionDetails };
+module.exports = {
+    mapErrorResponse,
+    mapWaitingForOTP,
+    mapServiceProducts,
+    mapTransactionDetails,
+    mapAirtimeResponse,
+    mapDataResponse,
+    mapMinNinResponse,
+    mapMidNinResponse,
+    mapElectricityResponse,
+    mapTvResponse,
+    mapScratchCardResponse
+};
