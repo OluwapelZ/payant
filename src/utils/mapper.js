@@ -24,34 +24,31 @@ function mapWaitingForOTP(message) {
         message: message,
         data: {
             provider_response_code: "900T0",
-            provider: "Payant",
+            provider: "Beeceptor",
             errors: null,
             error: null,
-            provider_response: {
-                reference: generateRandomReference()
-            }
+            provider_response: null
         }
     }
 }
 
-function mapServiceProducts(rawData) {
+function mapServiceProducts(rawData, orderReference) {
     return {
         provider_response_code: '00',
         provider: config.provider_name,
         errors: null,
         error: null,
         provider_response: {
-            products: mapProducts(rawData),
+            products: mapProducts(rawData, orderReference),
         },
         reference: generateRandomReference(),
         meta: {}
     };
 }
 
-function mapProducts(productsData) {
+function mapProducts(productsData, orderReference) {
     const productList = [];
     if (productsData.productCategories.length > 0) {
-        const orderReference = generateRandomReference();
         productsData.productCategories.forEach(element => {
             productList.push(
                 {
@@ -76,13 +73,17 @@ function mapProducts(productsData) {
     return productList;
 }
 
-function mapTransactionDetails(reqRef, transactionRef, request, response) {
+function mapTransactionDetails(reqRef, transactionRef, request, response, requestMode, orderRef, isOrderRefActive, otp) {
     return {
-        onepipeRequest_ref: reqRef,
+        onepipeRequestRef: reqRef,
         onepipeTransactionRef: transactionRef,
         providerRequest: JSON.stringify(request),
         providerStatus: response.status,
-        providerResponse: JSON.stringify(response)
+        providerResponse: JSON.stringify(response),
+        orderReference: orderRef,
+        isOrderActive: isOrderRefActive,
+        requestMode,
+        otp
     }
 }
 
@@ -106,13 +107,26 @@ function mapAirtimeResponse(responsePayload, amount) {
 
 function mapDataResponse() {
     return {
-
+        
     };
 }
 
-function mapElectricityResponse() {
+function mapElectricityResponse(responsePayload) {
     return {
-
+        provider_response_code: "00",
+        provider: "Payant",
+        errors: null,
+        error: null,
+        provider_response: {
+        reference: generateRandomReference(),
+        payment_status: "Successful",
+        fulfillment_status: "Succesful",
+        transaction_final_amount: responsePayload.amount,//in kobo
+        transaction_fee: 0.00,
+        pin_code: responsePayload.pin.pinCode,
+        pin_serial_number: responsePayload.pin.serialNumber,
+        narration: "Electricity subscription was successful"
+        }
     };
 }
 
@@ -128,15 +142,41 @@ function mapScratchCardResponse() {
     };
 }
 
-function mapMinNinResponse() {
+function mapMinNinResponse(identityResponse, orderReference) {
     return {
-
+        provider_response_code: "00",
+        provider: "Payant",
+        errors: null,
+        error: null,
+        provider_response: {
+            nin: identityResponse.data.nin,
+            first_name: identityResponse.data.firstname,
+            middle_name: identityResponse.data.middlename,
+            last_name: identityResponse.data.surname,
+            dob: identityResponse.data.birthdate,
+            reference: orderReference,
+            meta: {}
+        }
     };
 }
 
-function mapMidNinResponse() {
+function mapMidNinResponse(identityResponse, orderReference) {
     return {
-
+        provider_response_code: "00",
+        provider: "Payant",
+        errors: null,
+        error: null,
+        provider_response: {
+            nin: identityResponse.data.nin,
+            first_name: identityResponse.data.firstname,
+            middle_name: identityResponse.data.middlename,
+            last_name: identityResponse.data.surname,
+            dob: identityResponse.data.birthdate,
+            phone_number1: identityResponse.data.telephoneno,
+            phone_number2: "",
+            reference: orderReference,
+            meta: {}
+        }
     }
 }
 

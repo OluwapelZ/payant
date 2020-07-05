@@ -1,4 +1,5 @@
-const { listServiceProductsAPI, payantServiceApiCall, getTransactionStatus } = require('../utils/third_party_api_call');
+const { listServiceProductsAPI, payantServiceApiCall, payantIdentityApiCall, getTransactionStatus, sendOTP } = require('../utils/third_party_api_call');
+const { generateRandomReference, generateOTP, hashPhoneNumber } = require('../utils/util');
 const {
     mapServiceProducts,
     mapTransactionDetails,
@@ -12,9 +13,10 @@ const {
 } = require('../utils/mapper');
 const {
     InvalidRequestModeError, BillerProductError, ServiceProductCategoryError, BillerNotSupportedError,
-    ServiceNotImplementedError, InvalidParamsError, ProviderResponseError,
+    ServiceNotImplementedError, InvalidParamsError, ProviderResponseError, CustomerVerificationError,
 } = require('../error');
 const CONSTANTS = require('../constants/constant');
+const ResponseMessages = require('../constants/response_messages');
 const config = require('../config/config');
 const Transaction = require('../models/transaction');
 const logger = require('../utils/logger');
@@ -22,12 +24,21 @@ const logger = require('../utils/logger');
 class BaseService {
     async baseService(requestPayload) {
         const request = requestPayload.data;
+
         let serviceRawResponse = null;
         let mappedServicesResponse = null;
+
+        if (request.auth.route_mode == CONSTANTS.REQUEST_TYPES.VALIDATE) {
+            return; // implement otp validation logic
+        }
 
         if (request.auth.route_mode != CONSTANTS.REQUEST_TYPES.TRANSACT) {
             logger.error('Request mode has to be passed as transact to make a service call');
             throw new InvalidRequestModeError('Request mode has to be passed as transact to make a service call');
+        }
+
+        if (!request.transaction.details.order_reference && !['lookup_nin_min', 'lookup_nin_mid'].includes(request.request_type)) {
+            await new Transaction().fetchTransactionByOrderRef(request.transaction.details.order_reference); // Fetch active transaction by order refrence
         }
 
         switch(request.request_type) {
@@ -42,7 +53,7 @@ class BaseService {
                 break;
             case 'pay_electricity':
                 serviceRawResponse = await this.buyElectricityService(request, requestPayload.token);
-                mappedServicesResponse = mapElectricityResponse(serviceRawResponse);
+                mappedServicesResponse = mapElectricityResponse(serviceRawResponse.transaction);
                 break;
             case 'pay_tv':
                 serviceRawResponse = await this.buyTvService(request, requestPayload.token);
@@ -53,11 +64,19 @@ class BaseService {
                 mappedServicesResponse = mapScratchCardResponse(serviceRawResponse);
                 break;
             case 'lookup_nin_min':
-                serviceRawResponse = await this.lookupNinMinService(request, requestPayload.token);
+                serviceRawResponse = await this.lookupNinMinService(request);
+                if (request.transaction.details.otp_override == true || (request.transaction.app_info && request.transaction.app_info.extras && request.transaction.app_info.extras.otp_override == true)) {
+                    return serviceRawResponse;
+                }
+                
                 mappedServicesResponse = mapMinNinResponse(serviceRawResponse);
                 break;
             case 'lookup_nin_mid':
-                serviceRawResponse = await this.lookupNinMidService(request, requestPayload.token);
+                serviceRawResponse = await this.lookupNinMidService(request);
+                if (request.transaction.details.otp_override == true || (request.transaction.app_info && request.transaction.app_info.extras && request.transaction.app_info.extras.otp_override == true)) {
+                    return serviceRawResponse;
+                }
+                
                 mappedServicesResponse = mapMidNinResponse(serviceRawResponse);
                 break;
             default:
@@ -65,8 +84,8 @@ class BaseService {
                 throw new ServiceNotImplementedError(`Service ${request.request_type} is currently not implemented`);
         }
 
-        const transactionDetails = mapTransactionDetails(request.request_ref, request.transaction.transaction_ref, request, serviceRawResponse);
-        await this.storeTransaction(transactionDetails);
+        const transactionDetails = mapTransactionDetails(request.request_ref, request.transaction.transaction_ref, request, serviceRawResponse, CONSTANTS.REQUEST_TYPES.TRANSACT);
+        // await this.storeTransaction(transactionDetails);
 
         return mappedServicesResponse;
     }
@@ -90,6 +109,19 @@ class BaseService {
             throw new BillerNotSupportedError(`Provider does not support "${request.transaction.details.biller_id}" biller`);
         }
 
+        if (['pay_tv', 'pay_electricity'].includes(request.request_type)) { //verify customer's unique number with biller
+            if (!request.transaction.customer.customer_ref) {
+                logger.error(`Missing parameter customer_ref for service "${request.request_type}"`);
+                throw new CustomerVerificationError(`Missing parameter customer_ref for service "${request.request_type}"`);
+            }
+
+            const verifyCustomer = await payantServiceApiCall(requestPayload.token, `${CONSTANTS.URL_PATHS.list_services_products}/${billerId}/verify`, { account: request.transaction.customer.customer_ref });
+            if (verifyCustomer.status != CONSTANTS.PAYANT_STATUS_TYPES.successful) {
+                logger.error(`Customer unique reference verification with biller ${request.transaction.details.biller_id} failed: ${verifyCustomer.message}`);
+                throw new CustomerVerificationError(`Customer unique reference verification with biller ${request.transaction.details.biller_id} failed: ${verifyCustomer.message}`);
+            } // Continue with product listing if verification was successful
+        }
+
         const services = await listServiceProductsAPI(requestPayload.token, billerId);
 
         if (services.status == CONSTANTS.PAYANT_STATUS_TYPES.error) {
@@ -97,10 +129,11 @@ class BaseService {
             throw new ServiceProductCategoryError(`An error occured on attempt to fetch "${request.request_type}" service products`);
         }
 
-        const mappedServices = mapServiceProducts(services.data);
+        const orderReference = generateRandomReference();
+        const mappedServices = mapServiceProducts(services.data, orderReference);
 
         //Persist transaction request
-        const transactionDetails = mapTransactionDetails(request.request_ref, request.transaction.transaction_ref, request, services)
+        const transactionDetails = mapTransactionDetails(request.request_ref, request.transaction.transaction_ref, request, services, CONSTANTS.REQUEST_TYPES.OPTIONS, orderReference, true, null);
         await this.storeTransaction(transactionDetails);
 
         return mappedServices;
@@ -153,13 +186,60 @@ class BaseService {
     }
 
     async buyElectricityService(requestPayload, token) {
-        const postDetails = {};
+        if(!requestPayload.transaction.details || !requestPayload.transaction.details.biller_id) {
+            logger.error(`Biller id has to be passed in details object nested in transaction object`);
+            throw new InvalidParamsError('Biller id is not provided');
+        }
+
+        const billerId = config.service_biller_ids[`${requestPayload.request_type}`][`${requestPayload.transaction.details.biller_id}`];
+
+        const verifyCustomer = await payantServiceApiCall(token, `${CONSTANTS.URL_PATHS.list_services_products}/${billerId}/verify`, { account: requestPayload.transaction.customer.customer_ref });
+        if (verifyCustomer.status != CONSTANTS.PAYANT_STATUS_TYPES.successful) {
+            logger.error(`Customer unique reference verification with biller ${request.transaction.details.biller_id} failed: ${verifyCustomer.message}`);
+            throw new CustomerVerificationError(`Customer unique reference verification with biller ${request.transaction.details.biller_id} failed: ${verifyCustomer.message}`);
+        }
+
+        if (!requestPayload.transaction.amount || !requestPayload.transaction.customer.customer_ref || !requestPayload.transaction.customer.mobile_no) {
+            logger.error(
+                `Missing parameter - ${(!requestPayload.transaction.amount) ? 'amount' : ''}-${(!requestPayload.transaction.customer.customer_ref) ? 'customer_ref' : ''}-${(!requestPayload.transaction.customer.mobile_no) ? 'mobile_no' : ''}`
+            );
+            throw new InvalidParamsError(
+                `Missing parameter - ${(!requestPayload.transaction.amount) ? 'amount' : ''}-${(!requestPayload.transaction.customer.customer_ref) ? 'customer_ref' : ''}-${(!requestPayload.transaction.customer.mobile_no) ? 'mobile_no' : ''}`
+            );
+        }
+
+        const postDetails = {
+            service_category_id: billerId,
+            meter_number: requestPayload.transaction.customer.customer_ref,
+            amount: requestPayload.transaction.amount,
+            phone: requestPayload.transaction.customer.mobile_no
+        };
+
         return await payantServiceApiCall(token, CONSTANTS.URL_PATHS.buy_electricity, postDetails);
     }
 
     async buyTvService(requestPayload, token) {
-        const postDetails = {};
-        return await payantServiceApiCall(token, CONSTANTS.URL_PATHS.buy_tv, postDetails);
+        if(!requestPayload.transaction.details || !requestPayload.transaction.details.biller_id) {
+            logger.error(`Biller id has to be passed in details object nested in transaction object`);
+            throw new InvalidParamsError('Biller id is not provided');
+        }
+
+        if (!requestPayload.transaction.customer.customer_ref) {
+            logger.error(`Missing parameter customer_ref [tv unique number]`);
+            throw new InvalidParamsError(`Missing parameter customer_ref [tv unique number]`);
+        }
+
+        const billerId = config.service_biller_ids[`${requestPayload.request_type}`][`${requestPayload.transaction.details.biller_id}`];
+
+        const verifyCustomer = await payantServiceApiCall(token, `${CONSTANTS.URL_PATHS.list_services_products}/${billerId}/verify`, { account: requestPayload.transaction.customer.customer_ref });
+
+        if (verifyCustomer.status != CONSTANTS.PAYANT_STATUS_TYPES.successful) {
+            logger.error(`Customer unique reference verification with biller ${request.transaction.details.biller_id} failed: ${verifyCustomer.message}`);
+            throw new CustomerVerificationError(`Customer unique reference verification with biller ${request.transaction.details.biller_id} failed: ${verifyCustomer.message}`);
+        }
+
+        // Continue after api clarification
+        // return await payantServiceApiCall(token, CONSTANTS.URL_PATHS.buy_tv, postDetails);
     }
 
     async buyScratchCardService(requestPayload, token) {
@@ -167,14 +247,78 @@ class BaseService {
         return await payantServiceApiCall(token, CONSTANTS.URL_PATHS.buy_scratch_card, postDetails);
     }
 
-    async lookupNinMinService(requestPayload, token) {
-        const postDetails = {};
-        return await payantServiceApiCall(token, CONSTANTS.URL_PATHS.look_up_nin, postDetails);
+    async lookupNinMinService(requestPayload) {
+        if (!requestPayload.transaction.customer.customer_ref) {
+            logger.error(`Missing parameter customer_ref [nin min]`);
+            throw new InvalidParamsError(`Missing parameter customer_ref [nin min]`);
+        }
+
+        const postDetails = {
+            method: 'SMS',
+            type: 'NIN',
+            number: requestPayload.transaction.customer.customer_ref
+        };
+        const identityResponse = await payantIdentityApiCall(postDetails);
+
+        if (identityResponse.status != CONSTANTS.PAYANT_STATUS_TYPES.successful) {
+            logger.error(`Identity pull request failed`);
+            throw new CustomerVerificationError(`Identity pull request failed`);
+        }
+
+        if ((requestPayload.transaction.details && requestPayload.transaction.details.otp_override == true) || (requestPayload.transaction.app_info && requestPayload.transaction.app_info.extras && requestPayload.transaction.app_info.extras.otp_override == true)) {
+            return identityResponse;
+        }
+
+        const otp = generateOTP();
+        const orderReference = generateRandomReference();
+        const transactionDetails = mapTransactionDetails(requestPayload.request_ref, requestPayload.transaction.transaction_ref, requestPayload, mapMinNinResponse(identityResponse, orderReference), CONSTANTS.REQUEST_TYPES.TRANSACT, orderReference, true, orderReference);
+        await this.storeTransaction(transactionDetails);
+
+        const smsData = {
+            senderName: 'OnePipe - Verify OTP',
+            recipientPhoneNumber: requestPayload.transaction.customer.mobile_no,
+            message: `Hello ${requestPayload.transaction.customer.surname}, here's the otp to validate fecthing your identity details: ${otp}. Please contact us if you did not initiate this request`
+        };
+
+        const sendValidationOtp = await sendOTP(smsData);
+        return `${ResponseMessages.SUCCESSFULLY_SENT_OTP} ${hashPhoneNumber(requestPayload.transaction.customer.customer_ref)}`;
     }
 
-    async lookupNinMidService(requestPayload, token) {
-        const postDetails = {};
-        return await payantServiceApiCall(token, CONSTANTS.URL_PATHS.look_up_nin, postDetails);
+    async lookupNinMidService(requestPayload) {
+        if (!requestPayload.transaction.customer.customer_ref) {
+            logger.error(`Missing parameter customer_ref [nin mid]`);
+            throw new InvalidParamsError(`Missing parameter customer_ref [nin mid]`);
+        }
+
+        const postDetails = {
+            method: 'SMS',
+            type: 'NIN',
+            number: requestPayload.transaction.customer.customer_ref
+        };
+        const identityResponse = await payantIdentityApiCall(postDetails);
+
+        if (identityResponse.status != CONSTANTS.PAYANT_STATUS_TYPES.successful) {
+            logger.error(`Identity pull request failed`);
+            throw new CustomerVerificationError(`Identity pull request failed`);
+        }
+
+        if ((requestPayload.transaction.details && requestPayload.transaction.details.otp_override == true) || (requestPayload.transaction.app_info && requestPayload.transaction.app_info.extras && requestPayload.transaction.app_info.extras.otp_override == true)) {
+            return identityResponse;
+        }
+
+        const otp = generateOTP();
+        const orderReference = generateRandomReference();
+        const transactionDetails = mapTransactionDetails(requestPayload.request_ref, requestPayload.transaction.transaction_ref, requestPayload, mapMidNinResponse(identityResponse, orderReference), CONSTANTS.REQUEST_TYPES.TRANSACT, orderReference, true, orderReference);
+        await this.storeTransaction(transactionDetails);
+
+        const smsData = {
+            senderName: 'OnePipe - Verify OTP',
+            recipientPhoneNumber: requestPayload.transaction.customer.mobile_no,
+            message: `Hello ${requestPayload.transaction.customer.surname}, here's the otp to validate fecthing your identity details: ${otp}. Please contact us if you did not initiate this request`
+        };
+
+        const sendValidationOtp = await sendOTP(smsData);
+        return `${ResponseMessages.SUCCESSFULLY_SENT_OTP} ${hashPhoneNumber(requestPayload.transaction.customer.customer_ref)}`;
     }
 
     /**

@@ -80,10 +80,49 @@ function payantServiceApiCall(token, url_path, requestPayload, callback) {
     requestHeaders.headers['Content-Type'] = 'application/json';
 
     return axios.post(`${config.payant_base_url}${url_path}`, requestPayload, requestHeaders)
-    .then(response => callback(response.data))
+    .then(response => (typeof callback !== 'undefined') ? callback(response.data) : response.data)
     .catch(function (err) {
         logger.error(`Error occurred on purchasing airtime: ${err.message}`);
         throw err;
+    })
+}
+
+/**
+ * Send request to purchase airtime
+ * @param {object} requestPayload 
+ */
+function payantIdentityApiCall(requestPayload) {
+    const requestHeaders = {
+        headers: {
+            Authorization: `Bearer ${config.payant_identity_api_key}`
+        }
+    };
+    requestHeaders.headers['Content-Type'] = 'application/json';
+
+    return axios.post(`${config.payant_identity_verification_base_url}/verification`, requestPayload, requestHeaders)
+    .then(response => response.data)
+    .catch(function (err) {
+        logger.error(`Error occurred on purchasing airtime: ${err.message}`);
+        throw err;
+    })
+}
+
+/**
+ * Send otp to provided number
+ * @param {object} smsDetails 
+ */
+function sendOTP(smsDetails) {
+    const requestHeaders = {
+        headers: { 
+            Authorization: `Bearer ${config.one_pipe_sms_auth}`,
+        }
+    };
+
+    return axios.post(config.one_pipe_sms_url, smsDetails, requestHeaders)
+    .then(response => response.data)
+    .catch(function (error) {
+        console.log(errror);
+        throw error;
     })
 }
 
@@ -91,5 +130,7 @@ module.exports = {
     getTransactionStatus,
     authenticate,
     listServiceProductsAPI,
-    payantServiceApiCall
+    payantServiceApiCall,
+    sendOTP,
+    payantIdentityApiCall
 }

@@ -6,7 +6,8 @@ const { invalidData, optionsProviderResponse } = require('../fixtures/index');
 
 jest.mock('../../src/utils/third_party_api_call', () => {
     return {
-        listServiceProductsAPI: jest.fn()
+        listServiceProductsAPI: jest.fn(),
+        payantServiceApiCall: jest.fn().mockResolvedValue({status: 'success'})
     }
 });
 

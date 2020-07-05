@@ -30,10 +30,14 @@ describe('Airtime Service', () => {
     it('should throw error provider does not currently implement service', async (done) => {
         const requestPayload = Object.assign({}, invalidData);
         requestPayload.auth.route_mode = 'transact';
+        const fetchTransactionByRefMock = (Transaction.prototype.fetchTransactionByOrderRef = jest.fn());
         requestPayload.request_type = 'not_implemented';
+        requestPayload.transaction.details.order_reference = 'sdfdsf';
         try {
             await baseService.baseService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
         } catch (error) {
+            console.log(error.stack)
+            expect(fetchTransactionByRefMock).toHaveBeenCalled();
             expect(error instanceof ServiceNotImplementedError).toBe(true);
             done();
         }
@@ -42,11 +46,14 @@ describe('Airtime Service', () => {
     it('should throw error if does not support the provided telco_code', async (done) => {
         const requestPayload = Object.assign({}, invalidData);
         requestPayload.auth.route_mode = 'transact';
+        const fetchTransactionByRefMock = (Transaction.prototype.fetchTransactionByOrderRef = jest.fn());
         requestPayload.request_type = 'buy_airtime';
         requestPayload.transaction.details.tel_code = 'invalid_telco_code';
+        requestPayload.transaction.details.order_reference = 'sfsfsdf';
         try {
             await baseService.baseService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
         } catch (error) {
+            expect(fetchTransactionByRefMock).toHaveBeenCalled();
             expect(error instanceof BillerNotSupportedError).toBe(true);
             done();
         }
