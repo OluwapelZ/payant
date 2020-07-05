@@ -1,4 +1,4 @@
-const { failed, success, optionsSuccess } = require('../utils/http_response');
+const { failed, success, optionsSuccess, waitingForOTP } = require('../utils/http_response');
 const CONSTANTS = require('../constants/constant');
 const ResponseMessage = require('../constants/response_messages');
 const {
@@ -6,7 +6,8 @@ const {
     BillerProductError,
     BillerNotSupportedError,
     ServiceProductCategoryError,
-    InvalidParamsError
+    InvalidParamsError,
+    TransactionNotFoundError
 } = require('../error/index');
 const logger = require('../utils/logger');
 const BaseService = require('../services/base');
@@ -19,7 +20,7 @@ class BaseController {
             optionsSuccess(res, CONSTANTS.STATUS_CODES.SUCCESS, products)
         } catch (err) {
             if (err instanceof InvalidRequestModeError) {
-                failed(res, 500, err.message, err.stack);
+                failed(res, 400, err.message, err.stack);
                 throw err;
             }
 
@@ -47,10 +48,24 @@ class BaseController {
     async transact(req, res) {
         try {
             const serviceResponse = await new BaseService().baseService(req.body);
+            console.log('Controller: ',serviceResponse)
+            process.exit();
+            return (req.body.data.transaction.details.otp_override == true || (req.body.data.transaction.app_info && req.body.data.transaction.app_info.extras && req.body.data.transaction.app_info.extras.otp_override == true)) ?
+            waitingForOTP(res, CONSTANTS.STATUS_CODES.SUCESS, serviceResponse) :
             success(res, CONSTANTS.STATUS_CODES.SUCCESS, ResponseMessage.TRANSACTION_SUCCESSFUL, serviceResponse);
         } catch (err) {
             if (err instanceof InvalidParamsError) {
-                failed(res, 500, err.message, err.stack);
+                failed(res, 400, err.message, err.stack);
+                throw err;
+            }
+
+            if (err instanceof InvalidRequestModeError) {
+                failed(res, 400, err.message, err.stack);
+                throw err;
+            }
+
+            if (err instanceof TransactionNotFoundError) {
+                failed(res, 400, err.message, err.stack);
                 throw err;
             }
 

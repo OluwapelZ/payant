@@ -1,7 +1,7 @@
 const CONSTANTS = {
     REQUEST_STATUSES: {
         SUCCESSFUL: 'Successful',
-        FAILED: 'Failed',
+        FAILED: 'Error',
         WAITING_FOR_OTP: 'WaitingForOTP',
         OPTIONS_DELIVERED: 'OptionsDelivered',
     },
@@ -32,7 +32,8 @@ const CONSTANTS = {
         buy_scratch_card: '/bills/pay/scratch-card',
         buy_electricity: '/bills/pay/electricity',
         buy_tv: '/bills/pay/tv',
-        look_up_nin: '/verification'
+        look_up_nin: '/verification',
+        verify: 'verify'
     },
     PAYANT_STATUS_TYPES: {
         successful: 'success',

@@ -2,9 +2,12 @@ const config = {
     payant_base_url: process.env.PAYANT_BASE_URL,
     payant_identity_verification_base_url: process.env.IDENTITY_BASE_URL,
     payant_service_list: process.env.LIST_SERVICES_URL,
+    payant_identity_api_key: process.env.IDENTITY_API_KEY,
+    one_pipe_sms_url: process.env.ONE_PIPE_SMS_URL,
     auth: {
         username: process.env.BASIC_AUTH_USERNAME,
-        password: process.env.BASIC_AUTH_PASSWORD
+        password: process.env.BASIC_AUTH_PASSWORD,
+        one_pipe_sms_auth: process.env.ONE_PIPE_SMS_AUTH,
     },
     one_pipe_sms_auth: process.env.ONE_PIPE_SMS_AUTH,
     crypt_key: process.env.CRYPT_KEY || 'p@hy@ernt',
