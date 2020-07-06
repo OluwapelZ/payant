@@ -49,7 +49,8 @@ function authenticate(password, username) {
  * Fetch list of provider services
  * @param {String} token 
  */
-function listServiceProductsAPI(token, billerId) {
+function listServiceProductsAPI(token, billerId, account) {
+    const uniqueAccount = (account) ? account : "";
     const requestHeaders = {
         headers: {
             Authorization: token
@@ -57,7 +58,7 @@ function listServiceProductsAPI(token, billerId) {
     };
     requestHeaders.headers['Content-Type'] = 'application/json';
      
-    return axios.post(`${config.payant_base_url}${CONSTANTS.URL_PATHS.list_services_products}/${billerId}/products`, {}, requestHeaders)
+    return axios.post(`${config.payant_base_url}${CONSTANTS.URL_PATHS.list_services_products}/${billerId}/products`, { account: uniqueAccount }, requestHeaders)
     .then(response => response.data)
     .catch(function (err) {
         logger.error(`Error occurred on authenticating user: ${err.message}`);

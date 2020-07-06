@@ -37,7 +37,7 @@ class BaseService {
             throw new InvalidRequestModeError('Request mode has to be passed as transact to make a service call');
         }
 
-        if (!request.transaction.details.order_reference && !['lookup_nin_min', 'lookup_nin_mid'].includes(request.request_type)) {
+        if (request.transaction.details.order_reference && !['lookup_nin_min', 'lookup_nin_mid'].includes(request.request_type)) {
             await new Transaction().fetchTransactionByOrderRef(request.transaction.details.order_reference); // Fetch active transaction by order refrence
         }
 
@@ -45,11 +45,12 @@ class BaseService {
             case 'buy_airtime':
                 const response = await this.buyAirtimeService(request, requestPayload.token);
                 serviceRawResponse = response.data.response_payload;
-                mappedServicesResponse = mapAirtimeResponse(serviceRawResponse.data.msg.results, response.data.amount);
+                mappedServicesResponse = mapAirtimeResponse(serviceRawResponse.data.msg.results, response.data.amount, request.transaction.details.order_reference);
                 break;
             case 'buy_data':
-                serviceRawResponse = await this.buyDataService(request, requestPayload.token);
-                mappedServicesResponse = mapDataResponse(serviceRawResponse)
+                const response = await this.buyDataService(request, requestPayload.token);
+                serviceRawResponse = response.data.response_payload;
+                mappedServicesResponse = mapDataResponse(serviceRawResponse.data.msg.results, response.data.amount, request.transaction.details.order_reference);
                 break;
             case 'pay_electricity':
                 serviceRawResponse = await this.buyElectricityService(request, requestPayload.token);
@@ -85,7 +86,7 @@ class BaseService {
         }
 
         const transactionDetails = mapTransactionDetails(request.request_ref, request.transaction.transaction_ref, request, serviceRawResponse, CONSTANTS.REQUEST_TYPES.TRANSACT);
-        // await this.storeTransaction(transactionDetails);
+        await this.storeTransaction(transactionDetails);
 
         return mappedServicesResponse;
     }
@@ -122,7 +123,7 @@ class BaseService {
             } // Continue with product listing if verification was successful
         }
 
-        const services = await listServiceProductsAPI(requestPayload.token, billerId);
+        const services = await listServiceProductsAPI(requestPayload.token, billerId, (request.transaction.customer.customer_ref) ? request.transaction.customer.customer_ref : null);
 
         if (services.status == CONSTANTS.PAYANT_STATUS_TYPES.error) {
             logger.error(`An error occured on attempt to fetch "${request.request_type}" service products: ${services.message}`);
@@ -140,14 +141,14 @@ class BaseService {
     }
 
     async buyAirtimeService(requestPayload, token) {
-        if(!config.service_biller_ids.buy_airtime.hasOwnProperty(requestPayload.transaction.details.telco_code)) {
-            logger.error(`Service "buy_airtime" does not support biller: ${requestPayload.transaction.details.telco_code}`);
-            throw new BillerNotSupportedError(`Biller ${requestPayload.transaction.details.telco_code} is not supported by service buy_airtime`)
-        }
-        
         if(!requestPayload.transaction.details || !requestPayload.transaction.details.telco_code) {
             logger.error(`Telco code (biller id) has to be passed in details object nested in transaction object`);
             throw new InvalidParamsError('Biller id (telco_code) is not provided');
+        }
+
+        if(!config.service_biller_ids.buy_airtime.hasOwnProperty(requestPayload.transaction.details.telco_code)) {
+            logger.error(`Service "buy_airtime" does not support biller: ${requestPayload.transaction.details.telco_code}`);
+            throw new BillerNotSupportedError(`Biller ${requestPayload.transaction.details.telco_code} is not supported by service buy_airtime`)
         }
 
         if(!requestPayload.transaction.customer.customer_ref || !requestPayload.transaction.amount) {
@@ -169,20 +170,58 @@ class BaseService {
             }
 
             const referenceCode = data.transaction.response_payload.data.msg.results.refCode;
-            const verifiedTransaction = getTransactionStatus(token, referenceCode);
+            const processedTransaction = getTransactionStatus(token, referenceCode);
 
-            if (verifiedTransaction.status === CONSTANTS.PAYANT_STATUS_TYPES.error) {
-                logger.error(`Provider error response on attempt to fetch airtime purchase status: ${data.message}`);
-                throw new ProviderResponseError(`Provider error response on attempt to fetch airtime purchase status: ${data.message}`);
+            if (processedTransaction.status === CONSTANTS.PAYANT_STATUS_TYPES.error) {
+                logger.error(`Provider error response on attempt to fetch airtime purchase transaction status: ${data.message}`);
+                throw new ProviderResponseError(`Provider error response on attempt to fetch airtime purchase transaction status: ${data.message}`);
             }
 
-            return verifiedTransaction;
+            return processedTransaction;
         });
     }
 
     async buyDataService(requestPayload, token) {
-        const postDetails = {};
-        return await payantServiceApiCall(token, CONSTANTS.URL_PATHS.data, postDetails);
+        if(!requestPayload.transaction.details || !requestPayload.transaction.details.biller_id || !requestPayload.transaction.details.biller_item_id) {
+            logger.error(`Biller id or biller item id has to be passed in details object nested in transaction object`);
+            throw new InvalidParamsError('Biller id or biller item id is not provided');
+        }
+
+        if(!config.service_biller_ids.buy_data.hasOwnProperty(requestPayload.transaction.details.biller_id)) {
+            logger.error(`Service "buy_data" does not support biller: ${requestPayload.transaction.details.biller_id}`);
+            throw new BillerNotSupportedError(`Biller ${requestPayload.transaction.details.biller_id} is not supported by service buy_data`)
+        }
+
+        if(!requestPayload.transaction.customer.customer_ref || !requestPayload.transaction.amount || !requestPayload.transaction.details.biller_item_id) {
+            logger.error('customer_ref (phone number), amount, or bundleCode (biller_item_id) is not provided');
+            throw new InvalidParamsError('Phone number, amount, or bundleCode (biller_item_id) is not provided');
+        }
+
+        const postDetails = {
+            amount: requestPayload.transaction.amount,
+            service_category_id: config.service_biller_ids.buy_data[`${requestPayload.transaction.details.biller_id}`],
+            account: requestPayload.transaction.customer.customer_ref,
+            bundleCode: requestPayload.transaction.details.biller_item_id,
+            quantity: 1,
+            status_url: CONSTANTS.SERVICE_STATUS_URL.BUY_AIRTIME
+        };
+
+        return payantServiceApiCall(token, CONSTANTS.URL_PATHS.data, postDetails, (data) => {
+            if (data.status === CONSTANTS.PAYANT_STATUS_TYPES.error) {
+                logger.error(`Provider error response on attempt to make data purchase: ${data.message}`);
+                throw new ProviderResponseError(`Provider error response on attempt to make data purchase: ${data.message}`);
+            }
+
+            const referenceCode = data.transaction.response_payload.data.msg.results.refCode;
+            const processedTransaction = getTransactionStatus(token, referenceCode);
+
+            if (processedTransaction.status != CONSTANTS.PAYANT_STATUS_TYPES.successful) {
+                logger.error(`Provider error response on attempt to fetch data purchase transaction status: ${data.message}`);
+                throw new ProviderResponseError(`Provider error response on attempt to fetch data purchase transaction status: ${data.message}`);
+            }
+
+            return processedTransaction;
+        });
     }
 
     async buyElectricityService(requestPayload, token) {
