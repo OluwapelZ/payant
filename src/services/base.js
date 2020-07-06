@@ -86,7 +86,7 @@ class BaseService {
         }
 
         const transactionDetails = mapTransactionDetails(request.request_ref, request.transaction.transaction_ref, request, serviceRawResponse, CONSTANTS.REQUEST_TYPES.TRANSACT);
-        // await this.storeTransaction(transactionDetails);
+        await this.storeTransaction(transactionDetails);
 
         return mappedServicesResponse;
     }
