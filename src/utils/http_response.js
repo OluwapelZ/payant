@@ -16,8 +16,8 @@ function failed(res, statusCode, message, stack=null) {
     res.status(statusCode).send({data: encrypt(config.crypt_key, JSON.stringify(mapErrorResponse(message, stack)))});
 };
 
-function waitingForOTP(res, statusCode, message) {
-    res.status(statusCode).send({data: encrypt(config.crypt_key, JSON.stringify(mapWaitingForOTP(message)))})
+function waitingForOTP(res, statusCode, data) {
+    res.status(statusCode).send({data: encrypt(config.crypt_key, JSON.stringify(mapWaitingForOTP(data.message, data.reference)))})
 };
 
 function wrongAuthProvder(res, statusCode, message) {

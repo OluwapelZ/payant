@@ -23,11 +23,19 @@ class Transaction extends Bookshelf.Model {
     async fetchTransactionByOrderRef(orderReference) {
         return this.where({ order_reference: orderReference, is_order_active: true })
             .fetch()
-            .then(response => response.toJSON())
+            .then(response => {
+                const data = response.toJSON();
+                const updateData = { id: data.id, is_order_active: false };
+                response.save(updateData, { method: 'update', patch: true })
+                    .catch((err) => {
+                        throw err;
+                    });
+                return data;
+            })
             .catch((err) => {
                 if (err.message === 'EmptyResponse') {
-                    logger.info(`Transaction not found tied to the provided order reference: ${orderReference}`);
-                    throw new TransactionNotFoundError('Transaction not found for the proviced order reference');
+                    logger.info(`Transaction is either not active or not found tied to the provided order reference: ${orderReference}`);
+                    throw new TransactionNotFoundError(`Transaction is either not active or not found for the provided order reference: ${orderReference}`);
                 }
 
                 throw err;

@@ -107,7 +107,7 @@ const invalidData = {
         transaction_ref_parent: "", 
         amount: 10000,
         customer:{
-            customer_ref: "{{customer id}}",
+            customer_ref: "rrkhjfehoidg",
             firstname: "Oluwapelumi",
             surname: "Olaoye",
             email: "olaoy*********@gmail.com",

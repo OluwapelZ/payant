@@ -38,6 +38,7 @@ const CONSTANTS = {
     PAYANT_STATUS_TYPES: {
         successful: 'success',
         error: 'error',
+        pending: 'pending'
     },
     SERVICE_CATEGORY_ID: {
         BUY_AIRTIME: 7,
@@ -46,6 +47,7 @@ const CONSTANTS = {
     SERVICE_STATUS_URL: {
         BUY_AIRTIME: "http://api.mydomain.com/airtime_callback"
     },
+    INVOICE_PERIOD: 1,
 }
 
 module.exports = CONSTANTS;
