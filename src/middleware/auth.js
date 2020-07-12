@@ -10,7 +10,7 @@ module.exports = async (req, res, next) => {
     try {
         let rawData = decrypt(config.crypt_key, req.body.data);
         let trimmedDated = rawData.split("").filter(function(e) {
-            return e != "\u0000" ;
+            return e != "\u0000";
         });
         rawData = trimmedDated.join('');
 
@@ -18,6 +18,12 @@ module.exports = async (req, res, next) => {
         let password = '';
 
         const requestPayload = JSON.parse(rawData);
+
+        // Exclude otp validation request from payant authentication.
+        if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.VALIDATE) {
+            next();
+        }
+
         if ((requestPayload.auth && requestPayload.auth.secure == ';') && (!requestPayload.transaction.app_info || !requestPayload.transaction.app_info.extras || requestPayload.transaction.app_info.extras.phone_number == '')) {
             logger.error('Invalid authentication details - No authentication detail');
             return failed(res, 401, ResponseMessages.NO_AUTH_DETAILS_PROVIDED);

@@ -8,7 +8,7 @@ function mapErrorResponse(message, stack) {
         message: message,
         data: {
             provider_response_code: null,
-            provider: "Payant",
+            provider: config.provider_name,
             errors: stack,
             error: message,
             provider_response: {
@@ -18,21 +18,22 @@ function mapErrorResponse(message, stack) {
     }
 }
 
-function mapWaitingForOTP(message) {
+function mapWaitingForOTP(message, reference) {
     return {
         status: CONSTANTS.REQUEST_STATUSES.WAITING_FOR_OTP,
         message: message,
         data: {
-            provider_response_code: "900T0",
-            provider: "Beeceptor",
+            provider_response_code: 00,
+            provider: "Payant",
             errors: null,
             error: null,
-            provider_response: null
+            provider_response: null,
+            reference: reference
         }
     }
 }
 
-function mapServiceProducts(rawData, orderReference) {
+function mapServiceProducts(rawData, orderReference, transactionRef) {
     return {
         provider_response_code: '00',
         provider: config.provider_name,
@@ -41,7 +42,7 @@ function mapServiceProducts(rawData, orderReference) {
         provider_response: {
             products: mapProducts(rawData, orderReference),
         },
-        reference: generateRandomReference(),
+        reference: transactionRef,
         meta: {}
     };
 }
@@ -126,7 +127,7 @@ function mapDataResponse(responsePayload, amount, orderRef) {
 function mapElectricityResponse(responsePayload) {
     return {
         provider_response_code: "00",
-        provider: "Payant",
+        provider: config.provider_name,
         errors: null,
         error: null,
         provider_response: {
@@ -142,22 +143,47 @@ function mapElectricityResponse(responsePayload) {
     };
 }
 
-function mapTvResponse() {
+function mapTvResponse(requestPayload, responsePayload) {
     return {
-
+        provider_response_code: "00",
+        provider: config.provider_name,
+        errors: null,
+        error: null,
+        provider_response: {
+            reference: requestPayload.transaction.transaction_ref,
+            payment_status: responsePayload.transaction.status,
+            fulfillment_status: responsePayload.status,
+            transaction_final_amount: responsePayload.transaction.amount,
+            transaction_fee: 0,
+            narration: ""
+        }
     };
 }
 
-function mapScratchCardResponse() {
+function mapScratchCardResponse(responsePayload, orderReference) {
     return {
-
+        provider_response_code: "00",
+        provider: config.provider_name,
+        errors: null,
+        error: null,
+        provider_response: {
+            scratch_card_number: responsePayload.pin.serialNumber,
+            sratch_card_pin: responsePayload.pin.pinCode,
+            scratch_card_serial: responsePayload.pin.serialNumber,
+            payment_status: "Successful",
+            fulfillment_status: "Succesful",
+            transaction_final_amount: responsePayload.amount,
+            transaction_fee: 0,
+            narration: "Waec Scratch card purchase was successful",
+            reference: orderReference,
+        }
     };
 }
 
 function mapMinNinResponse(identityResponse, orderReference) {
     return {
         provider_response_code: "00",
-        provider: "Payant",
+        provider: config.provider_name,
         errors: null,
         error: null,
         provider_response: {
@@ -175,7 +201,7 @@ function mapMinNinResponse(identityResponse, orderReference) {
 function mapMidNinResponse(identityResponse, orderReference) {
     return {
         provider_response_code: "00",
-        provider: "Payant",
+        provider: config.provider_name,
         errors: null,
         error: null,
         provider_response: {

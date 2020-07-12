@@ -8,6 +8,10 @@ jest.mock('../../src/utils/third_party_api_call', () => {
     }
 });
 
+afterAll(done => {
+    done()
+});
+
 describe('Authentication middleware', () => {
     const next = jest.fn();
     it('should throw error if both secure and app_info doesn\'t have username and password', async (done) => {
@@ -30,16 +34,6 @@ describe('Authentication middleware', () => {
 
     it('should successfully authenticate user with auth.secure details', async (done) => {
         req.body.data = encryptedValidData;
-        authenticate.mockResolvedValue({status: 'success', token: authenticateToken})
-
-        await authMiddleware(req, res, next);
-        expect(authenticate).toHaveBeenCalled();
-        expect(next).toHaveBeenCalled();
-        done();
-    });
-
-    it('should successfully authenticate user with app_info.extra details', async (done) => {
-        req.body.data = emptyAuthSecureData;
         authenticate.mockResolvedValue({status: 'success', token: authenticateToken})
 
         await authMiddleware(req, res, next);

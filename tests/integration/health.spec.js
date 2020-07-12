@@ -2,6 +2,10 @@ const server = require('../../src/app');
 const supertest = require('supertest');
 const request = supertest(server);
 
+afterAll(done => {
+    done()
+});
+
 describe('Health Status', () => {
     it('Should return status as true', async done => {
         const response = await request.get('/health');
