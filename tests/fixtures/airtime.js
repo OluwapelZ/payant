@@ -118,7 +118,7 @@ const invalidData = {
             another_key:"a_meta_value_2"
         },
         details: {
-            tel_code: "Glo",
+            telco_code: "Glo",
             order_reference: "check-again-now-223OU09809SF",
         },
         client_info: {

@@ -48,8 +48,6 @@ class BaseController {
     async transact(req, res) {
         try {
             const serviceResponse = await new BaseService().baseService(req.body);
-            console.log('Controller: ',serviceResponse)
-            process.exit();
             return (req.body.data.transaction.details.otp_override == true || (req.body.data.transaction.app_info && req.body.data.transaction.app_info.extras && req.body.data.transaction.app_info.extras.otp_override == true)) ?
             waitingForOTP(res, CONSTANTS.STATUS_CODES.SUCESS, serviceResponse) :
             success(res, CONSTANTS.STATUS_CODES.SUCCESS, ResponseMessage.TRANSACTION_SUCCESSFUL, serviceResponse);
