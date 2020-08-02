@@ -103,9 +103,29 @@ function payantIdentityApiCall(requestPayload) {
     return axios.post(`${config.payant_identity_verification_base_url}/verification`, requestPayload, requestHeaders)
     .then(response => response.data)
     .catch(function (err) {
-        logger.error(`Error occurred on purchasing airtime: ${err.message}`);
+        logger.error(`Error occurred on payant identity call: ${err.message}`);
         throw err;
     })
+}
+
+/**
+ * Log api data
+ * @param {*} logData 
+ */
+function apiLogger(logData) {
+    const requestHeaders = {
+        headers: {
+            Authorization: `Bearer ${config.api_logger_bearer_token}`
+        }
+    }
+    requestHeaders.headers['Content-Type'] = 'application/json';
+
+    return axios.post(`${config.api_logger_url}`, logData, requestHeaders)
+    .then(response => response.data)
+    .catch(function (err) {
+        logger.error(`Error occurred on api log attempt: ${err.message}`);
+        throw err;
+    });
 }
 
 /**
@@ -133,5 +153,6 @@ module.exports = {
     listServiceProductsAPI,
     payantServiceApiCall,
     sendOTP,
-    payantIdentityApiCall
+    payantIdentityApiCall,
+    apiLogger
 }

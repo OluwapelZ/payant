@@ -2,6 +2,7 @@ const createError = require('http-errors');
 const express = require('express');
 const morgan = require('morgan');
 const logger = require('./utils/logger');
+const redact =
 require('dotenv').config();
 
 const router = require('./routes/index');
@@ -12,6 +13,9 @@ const app = express();
 app.use(morgan('dev', {stream: logger.stream}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+//Setup api logger to intercept response
+app.use(require('./middleware/api_logger'));
 
 //Bind router-level middleware to app
 app.use('/', router);

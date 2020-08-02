@@ -30,7 +30,7 @@ describe('Data Service', () => {
         requestPayload.transaction.details.biller_id = 'Smile';
         requestPayload.transaction.details.order_reference = 'sfsfsdf';
         try {
-            await baseService.baseService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            await baseService.buyDataService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
             done()
         } catch (error) {
             expect(fetchTransactionByRefMock).toHaveBeenCalled();
@@ -48,7 +48,7 @@ describe('Data Service', () => {
         requestPayload.transaction.details.biller_item_id = 900
         requestPayload.transaction.details.order_reference = 'sfsfsdf';
         try {
-            await baseService.baseService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            await baseService.buyDataService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
             done()
         } catch (error) {
             expect(fetchTransactionByRefMock).toHaveBeenCalled();
@@ -68,7 +68,7 @@ describe('Data Service', () => {
 
         delete requestPayload.transaction.amount;
         try {
-            await baseService.baseService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            await baseService.buyDataService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
             done()
         } catch (error) {
             expect(fetchTransactionByRefMock).toHaveBeenCalled();
@@ -87,7 +87,7 @@ describe('Data Service', () => {
         requestPayload.transaction.details.order_reference = 'sfsfsdf';
 
         try {
-            await baseService.baseService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'});
+            await baseService.buyDataService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'});
             expect(fetchTransactionByRefMock).toHaveBeenCalled();
             expect(payantServiceApiCall).toHaveBeenCalled();
             done()

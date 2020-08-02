@@ -1,4 +1,5 @@
 const crypto = require("crypto");
+const config = require('../config/config');
 
 function encrypt(sharedKey, plainText) {
   try {
@@ -40,4 +41,14 @@ function decrypt(sharedKey, cipherText) {
     throw error;
   }
 }
-module.exports = { encrypt, decrypt };
+
+function decryptData(encryptedData) {
+  let rawData = decrypt(config.crypt_key, encryptedData);
+  let trimmedDated = rawData.split("").filter(function(e) {
+      return e != "\u0000";
+  });
+  rawData = trimmedDated.join('');
+
+  return JSON.parse(rawData);
+}
+module.exports = { encrypt, decrypt, decryptData };

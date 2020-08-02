@@ -10,6 +10,7 @@
     "migrate": "NODE_PATH=. knex migrate:latest"
   },
   "dependencies": {
+    "app-root-path": "^3.0.0",
     "axios": "^0.19.2",
     "bookshelf": "^1.1.1",
     "cookie-parser": "~1.4.4",
@@ -18,8 +19,10 @@
     "custom-error-generator": "^7.0.0",
     "debug": "~2.6.9",
     "express": "~4.16.1",
+    "express-mung": "^0.5.1",
     "http-errors": "~1.6.3",
     "knex": "^0.21.1",
+    "moment": "^2.27.0",
     "morgan": "~1.9.1",
     "mysql2": "^2.1.0",
     "node-mysql": "^0.4.2",
