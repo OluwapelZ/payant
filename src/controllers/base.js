@@ -17,7 +17,7 @@ class BaseController {
     async query(req, res) {
         try {
             const serviceResponse = await new BaseService().queryTransaction(req.body);
-            return success(res, CONSTANTS.STATUS_CODES.SUCCESS, ResponseMessage.TRANSACTION_SUCCESSFUL, serviceResponse);
+            return success(res, CONSTANTS.STATUS_CODES.SUCCESS, ResponseMessage.QUERY_REQUEST_SUCCESSFUL, serviceResponse);
         } catch (err) {
             if (err instanceof InvalidRequestModeError) {
                 failed(res, 400, err.message, err.stack);
