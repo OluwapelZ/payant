@@ -1,4 +1,5 @@
 const lodash = require('lodash');
+const moment = require('moment');
 
 function generateOTP() {
     const digits = '0123456789'; 
@@ -7,6 +8,10 @@ function generateOTP() {
         OTP += digits[Math.floor(Math.random() * 10)]; 
     } 
     return OTP;
+}
+
+function now() {
+    return moment(Date.now());
 }
 
 function generateRandomReference() {
@@ -54,4 +59,4 @@ const camelCaseObjectMap = (modelObject, mapFn) => {
     }, {});
 };
 
-module.exports = { generateOTP, generateRandomReference, hashPhoneNumber, snakeCaseObjectMap, camelCaseObjectMap };
+module.exports = { generateOTP, generateRandomReference, hashPhoneNumber, snakeCaseObjectMap, camelCaseObjectMap, now };

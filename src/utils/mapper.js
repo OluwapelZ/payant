@@ -1,6 +1,6 @@
 const CONSTANTS = require('../constants/constant');
 const config = require('../config/config');
-const { generateRandomReference } = require('../utils/util');
+const { generateRandomReference, now } = require('../utils/util');
 
 function mapErrorResponse(message, stack) {
     return {
@@ -23,7 +23,7 @@ function mapWaitingForOTP(message, reference) {
         status: CONSTANTS.REQUEST_STATUSES.WAITING_FOR_OTP,
         message: message,
         data: {
-            provider_response_code: 00,
+            provider_response_code: "00",
             provider: "Payant",
             errors: null,
             error: null,
@@ -74,13 +74,14 @@ function mapProducts(productsData, orderReference) {
     return productList;
 }
 
-function mapTransactionDetails(reqRef, transactionRef, request, response, requestMode, orderRef, isOrderRefActive, otp) {
+function mapTransactionDetails(reqRef, transactionRef, request, response, mappedResponse, requestMode, orderRef, isOrderRefActive, otp) {
     return {
         onepipeRequestRef: reqRef,
         onepipeTransactionRef: transactionRef,
         providerRequest: JSON.stringify(request),
         providerStatus: response.status,
         providerResponse: JSON.stringify(response),
+        mappedResponse: JSON.stringify(mappedResponse),
         orderReference: orderRef,
         isOrderActive: isOrderRefActive,
         requestMode,
@@ -218,6 +219,52 @@ function mapMidNinResponse(identityResponse, orderReference) {
     }
 }
 
+function mapAPILogger(request, response, body) {
+    if (!request.transaction) {
+        request.transaction = {
+            client_info: {
+                id: 'test-client-id',
+                name: 'Test name'
+            },
+            app_info: {
+            id: 'test-app-id',
+            name: 'Test app information details'
+            },
+            transaction_ref: 'test_reference'
+        }
+    }
+    return {
+        platform: "Payant",
+        client: {
+            client_id: request.transaction.client_info.id,
+            client_name: request.transaction.client_info.name,
+            client_app_id: request.transaction.app_info.id,
+            client_app_name: request.transaction.app_info.id,
+        },
+        transaction: {
+            transaction_ref: request.transaction.transaction_ref,
+            transaction_timestamp: now().toISOString()
+        },
+        request: {
+            source_name: "onepipe payant integration",
+            destination_name: "Payant",
+            request_type: "service name",
+            request_timestamp: now().toISOString(),
+            request_description: "",
+            destination_url: "",
+            request_headers: JSON.stringify(request.headers),
+            request_body: JSON.stringify(body)
+        },
+        response: {
+            response_timestamp: now().toISOString(),
+            response_http_status: response.status,
+            response_code: response.statusCode,
+            response_headers: JSON.stringify(response._headers),
+            response_body: JSON.stringify(body)
+        }
+    }
+}
+
 
 
 module.exports = {
@@ -231,5 +278,6 @@ module.exports = {
     mapMidNinResponse,
     mapElectricityResponse,
     mapTvResponse,
-    mapScratchCardResponse
+    mapScratchCardResponse,
+    mapAPILogger
 };

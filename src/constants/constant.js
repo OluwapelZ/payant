@@ -18,6 +18,7 @@ const CONSTANTS = {
         BUY_DATA: 'buy_data',
         BUY_SCRATCH_CARD: 'buy_scratch_card'
     },
+    AVAILABLE_SERVICES: ['buy_airtime', 'buy_data', 'pay_tv', 'pay_electricity', 'lookup_nin_min', 'lookup_nin_mid'],
     STATUS_CODES: {
         SUCCESS: 200,
         FAILED: 500,

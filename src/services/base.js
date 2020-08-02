@@ -13,87 +13,69 @@ const {
 } = require('../utils/mapper');
 const {
     InvalidRequestModeError, BillerProductError, ServiceProductCategoryError, BillerNotSupportedError,
-    ServiceNotImplementedError, InvalidParamsError, ProviderResponseError, CustomerVerificationError, InvalidOtpError
+    ServiceNotImplementedError, InvalidParamsError, ProviderResponseError, CustomerVerificationError,
+    InvalidOtpError, AutheticationError
 } = require('../error');
+const { authUser } = require('../middleware/auth');
 const CONSTANTS = require('../constants/constant');
 const ResponseMessages = require('../constants/response_messages');
 const config = require('../config/config');
 const Transaction = require('../models/transaction');
+const { decryptData } = require('../utils/crypt');
 const logger = require('../utils/logger');
 
 class BaseService {
-    async baseService(requestPayload) {
-        const request = requestPayload.data;
+    async  queryTransaction(request) {
+        const requestPayload = decryptData(request);
+        const serviceResponse = null;
+        const transaction = null;
 
-        let serviceRawResponse = null;
-        let mappedServicesResponse = null;
-
-        if (request.auth.route_mode == CONSTANTS.REQUEST_TYPES.VALIDATE) {
-            return await this.validateOtp(requestPayload);
+        if (!CONSTANTS.AVAILABLE_SERVICES.includes(requestPayload.request_type)) {
+        logger.error(`Query request was made to a service ${requestPayload.request_type} currently not implemented`);
+        throw new ServiceNotImplementedError(`Service ${requestPayload.request_type} is currently not implemented`);
         }
 
-        if (request.auth.route_mode != CONSTANTS.REQUEST_TYPES.TRANSACT) {
-            logger.error('Request mode has to be passed as transact to make a service call');
-            throw new InvalidRequestModeError('Request mode has to be passed as transact to make a service call');
+        if (!requestPayload.transaction || !requestPayload.transaction.transaction_ref) {
+        logger.error('Transaction reference is required for query requests');
+        throw new InvalidRequestModeError('Transaction reference is required for query requests');
         }
 
-        if (!['lookup_nin_min', 'lookup_nin_mid'].includes(request.request_type)) {
-            if (!request.transaction.details.order_reference) {
-                logger.error('Order Reference is a required param for transact calls.');
-                throw new InvalidParamsError('Order Reference is a required param for transact calls. !Excluding lookup nin!');
-            }
-
-            await new Transaction().fetchTransactionByOrderRef(request.transaction.details.order_reference); // Fetch active transaction by order refrence
-        }
-
-        switch(request.request_type) {
-            case 'buy_airtime':
-                const airtimeResponse = await this.buyAirtimeService(request, requestPayload.token);
-                serviceRawResponse = airtimeResponse.data.response_payload;
-                mappedServicesResponse = mapAirtimeResponse(serviceRawResponse.data.msg.results, response.data.amount, request.transaction.details.order_reference);
+        switch(requestPayload.request_type) {
+            case CONSTANTS.REQUEST_TYPES.BUY_AIRTIME:
+                transaction = await new Transaction().fetchTransactionByReference(requestPayload.transaction.transaction_ref);
+                serviceResponse = this.queryTransactionBuilder(requestPayload, transaction);
                 break;
-            case 'buy_data':
-                const dataResponse = await this.buyDataService(request, requestPayload.token);
-                serviceRawResponse = dataResponse.data.response_payload;
-                mappedServicesResponse = mapDataResponse(serviceRawResponse.data.msg.results, response.data.amount, request.transaction.details.order_reference);
+            case CONSTANTS.REQUEST_TYPES.BUY_DATA:
+                transaction = await new Transaction().fetchTransactionByReference(requestPayload.transaction.transaction_ref);
+                serviceResponse = this.queryTransactionBuilder(requestPayload, transaction);
                 break;
-            case 'pay_electricity':
-                serviceRawResponse = await this.buyElectricityService(request, requestPayload.token);
-                mappedServicesResponse = mapElectricityResponse(serviceRawResponse.transaction);
+            case CONSTANTS.REQUEST_TYPES.PAY_TV:
+                transaction = await new Transaction().fetchTransactionByReference(requestPayload.transaction.transaction_ref);
+                serviceResponse = this.queryTransactionBuilder(requestPayload, transaction);
                 break;
-            case 'pay_tv':
-                serviceRawResponse = await this.buyTvService(request, requestPayload.token);
-                mappedServicesResponse = mapTvResponse(request, serviceRawResponse);
+            case CONSTANTS.REQUEST_TYPES.PAY_ELECTRICITY:
+                transaction = await new Transaction().fetchTransactionByReference(requestPayload.transaction.transaction_ref);
+                serviceResponse = this.queryTransactionBuilder(requestPayload, transaction);
                 break;
-            case 'buy_scratch_card':
-                serviceRawResponse = await this.buyScratchCardService(request, requestPayload.token);
-                mappedServicesResponse = mapScratchCardResponse(serviceRawResponse.transaction, generateRandomReference());
+            case CONSTANTS.REQUEST_TYPES.BUY_SCRATCH_CARD:
+                transaction = await new Transaction().fetchTransactionByReference(requestPayload.transaction.transaction_ref);
+                serviceResponse = this.queryTransactionBuilder(requestPayload, transaction);
                 break;
-            case 'lookup_nin_min':
-                serviceRawResponse = await this.lookupNinMinService(request);
-                if (request.transaction.details.otp_override == true || (request.transaction.app_info && request.transaction.app_info.extras && request.transaction.app_info.extras.otp_override == true)) {
-                    return serviceRawResponse;
-                }
-                
-                return mapMinNinResponse(serviceRawResponse);
-            case 'lookup_nin_mid':
-                serviceRawResponse = await this.lookupNinMidService(request);
-                if (request.transaction.details.otp_override == true || (request.transaction.app_info && request.transaction.app_info.extras && request.transaction.app_info.extras.otp_override == true)) {
-                    return serviceRawResponse;
-                }
-                
-                return mapMidNinResponse(serviceRawResponse);
+            case CONSTANTS.REQUEST_TYPES.NIN_MIN:
+                transaction = await new Transaction().fetchTransactionByReference(requestPayload.transaction.transaction_ref);
+                serviceResponse = this.queryTransactionBuilder(requestPayload, transaction);
+                break;
+            case CONSTANTS.REQUEST_TYPES.NIN_MID:
+                transaction = await new Transaction().fetchTransactionByReference(requestPayload.transaction.transaction_ref);
+                serviceResponse = this.queryTransactionBuilder(requestPayload, transaction);
+                break;
             default:
-                logger.error(`Request was made to a service ${request.request_type} currently not implemented`);
-                throw new ServiceNotImplementedError(`Service ${request.request_type} is currently not implemented`);
+                serviceResponse = null;  
         }
 
-        const transactionDetails = mapTransactionDetails(request.request_ref, request.transaction.transaction_ref, request, serviceRawResponse, CONSTANTS.REQUEST_TYPES.TRANSACT);
-        await this.storeTransaction(transactionDetails);
-
-        return mappedServicesResponse;
+        return serviceResponse;
     }
-    
+
     async listProviderServices(requestPayload) {
         const request = requestPayload.data;
         if (request.auth.route_mode != CONSTANTS.REQUEST_TYPES.OPTIONS) {
@@ -138,13 +120,30 @@ class BaseService {
         const mappedServices = mapServiceProducts(services.data, orderReference, transactionRef);
 
         //Persist transaction request
-        const transactionDetails = mapTransactionDetails(request.request_ref, request.transaction.transaction_ref, request, services, CONSTANTS.REQUEST_TYPES.OPTIONS, orderReference, true, null);
-        await this.storeTransaction(transactionDetails);
-
+        await this.storeTransaction(request, services, mappedServices);
         return mappedServices;
     }
 
-    async buyAirtimeService(requestPayload, token) {
+    async buyAirtimeService(request) {
+        const requestPayload = request.data;
+        const token = request.token;
+
+        if (requestPayload.auth.route_mode != CONSTANTS.REQUEST_TYPES.TRANSACT) {
+            logger.error('Request mode has to be passed as transact to make a service call');
+            throw new InvalidRequestModeError('Request mode has to be passed as transact to make a service call');
+        }
+
+        if (requestPayload.request_type != CONSTANTS.REQUEST_TYPES.BUY_AIRTIME) {
+            logger.error('Request type has be to passed as buy_airtime');
+            throw new InvalidParamsError('Request type has be to passed as buy_airtime ');
+        }
+
+        if (!requestPayload.transaction.details.order_reference) {
+            logger.error('Order Reference is a required param for transact calls.');
+            throw new InvalidParamsError('Order Reference is a required param for transact calls.');
+        }
+        await new Transaction().fetchTransactionByOrderRef(requestPayload.transaction.details.order_reference); // Fetch active transaction by order refrence
+
         if(!requestPayload.transaction.details || !requestPayload.transaction.details.telco_code) {
             logger.error(`Telco code (biller id) has to be passed in details object nested in transaction object`);
             throw new InvalidParamsError('Biller id (telco_code) is not provided');
@@ -167,7 +166,7 @@ class BaseService {
             status_url: CONSTANTS.SERVICE_STATUS_URL.BUY_AIRTIME
         };
 
-        return payantServiceApiCall(token, CONSTANTS.URL_PATHS.airtime, postDetails, (data) => {
+        const airtimeResponse = await payantServiceApiCall(token, CONSTANTS.URL_PATHS.airtime, postDetails, (data) => {
             if (data.status === CONSTANTS.PAYANT_STATUS_TYPES.error) {
                 logger.error(`Provider error response on attempt to make airtime purchase: ${data.message}`);
                 throw new ProviderResponseError(`Provider error response on attempt to make airtime purchase: ${data.message}`);
@@ -183,9 +182,34 @@ class BaseService {
 
             return processedTransaction;
         });
+
+        const serviceRawResponse = airtimeResponse.data.response_payload;
+        const airtime = mapAirtimeResponse(serviceRawResponse.data.msg.results, serviceRawResponse.data.amount, requestPayload.transaction.details.order_reference);
+
+        await this.storeTransaction(requestPayload, serviceRawResponse, airtime);
+        return airtime;
     }
 
-    async buyDataService(requestPayload, token) {
+    async buyDataService(request) {
+        const requestPayload = request.data;
+        const token = request.token;
+
+        if (requestPayload.auth.route_mode != CONSTANTS.REQUEST_TYPES.TRANSACT) {
+            logger.error('Request mode has to be passed as transact to make a service call');
+            throw new InvalidRequestModeError('Request mode has to be passed as transact to make a service call');
+        }
+
+        if (requestPayload.request_type != CONSTANTS.REQUEST_TYPES.BUY_DATA) {
+            logger.error('Request type has be to passed as buy_data');
+            throw new InvalidParamsError('Request type has be to passed as buy_data ');
+        }
+
+        if (!requestPayload.transaction.details.order_reference) {
+            logger.error('Order Reference is a required param for transact calls.');
+            throw new InvalidParamsError('Order Reference is a required param for transact calls.');
+        }
+        await new Transaction().fetchTransactionByOrderRef(requestPayload.transaction.details.order_reference); // Fetch active transaction by order refrence
+
         if(!requestPayload.transaction.details || !requestPayload.transaction.details.biller_id || !requestPayload.transaction.details.biller_item_id) {
             logger.error(`Biller id or biller item id has to be passed in details object nested in transaction object`);
             throw new InvalidParamsError('Biller id or biller item id is not provided');
@@ -210,7 +234,7 @@ class BaseService {
             status_url: CONSTANTS.SERVICE_STATUS_URL.BUY_AIRTIME
         };
 
-        return payantServiceApiCall(token, CONSTANTS.URL_PATHS.data, postDetails, (data) => {
+        const dataResponse = await payantServiceApiCall(token, CONSTANTS.URL_PATHS.data, postDetails, (data) => {
             if (data.status === CONSTANTS.PAYANT_STATUS_TYPES.error) {
                 logger.error(`Provider error response on attempt to make data purchase: ${data.message}`);
                 throw new ProviderResponseError(`Provider error response on attempt to make data purchase: ${data.message}`);
@@ -226,9 +250,34 @@ class BaseService {
 
             return processedTransaction;
         });
+
+        const serviceRawResponse = dataResponse.data.response_payload;
+        const data = mapDataResponse(serviceRawResponse.data.msg.results, serviceRawResponse.data.amount, requestPayload.transaction.details.order_reference);
+
+        await this.storeTransaction(requestPayload, serviceRawResponse, data);
+        return data;
     }
 
-    async buyElectricityService(requestPayload, token) {
+    async buyElectricityService(request) {
+        const requestPayload = request.data;
+        const token = request.token;
+
+        if (requestPayload.auth.route_mode != CONSTANTS.REQUEST_TYPES.TRANSACT) {
+            logger.error('Request mode has to be passed as transact to make a service call');
+            throw new InvalidRequestModeError('Request mode has to be passed as transact to make a service call');
+        }
+
+        if (requestPayload.request_type != CONSTANTS.REQUEST_TYPES.PAY_ELECTRICITY) {
+            logger.error('Request type has be to passed as pay_electricity');
+            throw new InvalidParamsError('Request type has be to passed as pay_electricity ');
+        }
+
+        if (!requestPayload.transaction.details.order_reference) {
+            logger.error('Order Reference is a required param for transact calls.');
+            throw new InvalidParamsError('Order Reference is a required param for transact calls.');
+        }
+        await new Transaction().fetchTransactionByOrderRef(requestPayload.transaction.details.order_reference); // Fetch active transaction by order refrence
+
         if (!requestPayload.transaction.details || !requestPayload.transaction.details.biller_id) {
             logger.error(`Biller id has to be passed in details object nested in transaction object`);
             throw new InvalidParamsError('Biller id is not provided');
@@ -263,10 +312,33 @@ class BaseService {
             phone: requestPayload.transaction.customer.mobile_no
         };
 
-        return await payantServiceApiCall(token, CONSTANTS.URL_PATHS.buy_electricity, postDetails);
+        const electricityResponse = await payantServiceApiCall(token, CONSTANTS.URL_PATHS.buy_electricity, postDetails);
+        const electricity = mapElectricityResponse(electricityResponse.transaction);
+
+        await this.storeTransaction(requestPayload, electricityResponse, electricity);
+        return electricity;
     }
 
-    async buyTvService(requestPayload, token) {
+    async buyTvService(request) {
+        const requestPayload = request.data;
+        const token = request.token;
+
+        if (requestPayload.auth.route_mode != CONSTANTS.REQUEST_TYPES.TRANSACT) {
+            logger.error('Request mode has to be passed as transact to make a service call');
+            throw new InvalidRequestModeError('Request mode has to be passed as transact to make a service call');
+        }
+
+        if (requestPayload.request_type != CONSTANTS.REQUEST_TYPES.PAY_TV) {
+            logger.error('Request type has be to passed as pay_tv');
+            throw new InvalidParamsError('Request type has be to passed as pay_tv ');
+        }
+
+        if (!requestPayload.transaction.details.order_reference) {
+            logger.error('Order Reference is a required param for transact calls.');
+            throw new InvalidParamsError('Order Reference is a required param for transact calls.');
+        }
+        await new Transaction().fetchTransactionByOrderRef(requestPayload.transaction.details.order_reference); // Fetch active transaction by order refrence
+
         if(!requestPayload.transaction.details || !requestPayload.transaction.details.biller_id || !requestPayload.transaction.details.biller_item_id) {
             logger.error(`Biller id has to be passed in details object nested in transaction object`);
             throw new InvalidParamsError('Biller id is not provided');
@@ -301,10 +373,33 @@ class BaseService {
             phone: requestPayload.transaction.customer.mobile_no,
         }
 
-        return await payantServiceApiCall(token, CONSTANTS.URL_PATHS.buy_tv, postDetails);
+        const tvResponse = await payantServiceApiCall(token, CONSTANTS.URL_PATHS.buy_tv, postDetails);
+        const tv = mapTvResponse(requestPayload, tvResponse);
+
+        await this.storeTransaction(requestPayload, tvResponse, tv);
+        return tv;
     }
 
-    async buyScratchCardService(requestPayload, token) {
+    async buyScratchCardService(request) {
+        const requestPayload = request.data;
+        const token = request.token;
+
+        if (requestPayload.auth.route_mode != CONSTANTS.REQUEST_TYPES.TRANSACT) {
+            logger.error('Request mode has to be passed as transact to make a service call');
+            throw new InvalidRequestModeError('Request mode has to be passed as transact to make a service call');
+        }
+        
+        if (requestPayload.request_type != CONSTANTS.REQUEST_TYPES.BUY_SCRATCH_CARD) {
+            logger.error('Request type has be to passed as buy_scratch_card');
+            throw new InvalidParamsError('Request type has be to passed as buy_scratch_card ');
+        }
+
+        if (!requestPayload.transaction.details.order_reference) {
+            logger.error('Order Reference is a required param for transact calls.');
+            throw new InvalidParamsError('Order Reference is a required param for transact calls.');
+        }
+        await new Transaction().fetchTransactionByOrderRef(requestPayload.transaction.details.order_reference); // Fetch active transaction by order refrence
+
         if (!requestPayload.transaction.details || !requestPayload.transaction.details.biller_id) {
             logger.error(`Biller id has to be passed in details object nested in transaction object`);
             throw new InvalidParamsError('Biller id [waec] is not provided');
@@ -327,10 +422,26 @@ class BaseService {
             pins: 1,
             amount: requestPayload.transaction.amount
         };
-        return await payantServiceApiCall(token, CONSTANTS.URL_PATHS.buy_scratch_card, postDetails);
+        const scratchCardResponse = await payantServiceApiCall(token, CONSTANTS.URL_PATHS.buy_scratch_card, postDetails);
+        const scratchCard = mapScratchCardResponse(scratchCardResponse.transaction, generateRandomReference());
+
+        await this.storeTransaction(requestPayload, scratchCardResponse, scratchCard);
+        return scratchCard;
     }
 
-    async lookupNinMinService(requestPayload) {
+    async lookupNinMinService(request) {
+        const requestPayload = request.data;
+        const orderReference = generateRandomReference();
+
+        if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.VALIDATE) {
+            return await this.validateOtp(requestPayload);
+        }
+
+        if (requestPayload.auth.route_mode != CONSTANTS.REQUEST_TYPES.TRANSACT) {
+            logger.error('Request mode has to be passed as transact to make a service call');
+            throw new InvalidRequestModeError('Request mode has to be passed as transact to make a service call');
+        }
+
         if (!requestPayload.transaction.customer.customer_ref) {
             logger.error(`Missing parameter customer_ref [nin min]`);
             throw new InvalidParamsError(`Missing parameter customer_ref [nin min]`);
@@ -349,13 +460,14 @@ class BaseService {
         }
 
         if ((requestPayload.transaction.details && requestPayload.transaction.details.otp_override == true) || (requestPayload.transaction.app_info && requestPayload.transaction.app_info.extras && requestPayload.transaction.app_info.extras.otp_override == true)) {
-            return identityResponse;
+            const transactionDetails = mapTransactionDetails(requestPayload.request_ref, requestPayload.transaction.transaction_ref, requestPayload, identityResponse, mapMinNinResponse(identityResponse, orderReference), CONSTANTS.REQUEST_TYPES.TRANSACT, orderReference, true, null);
+            await new Transaction().createTransaction(transactionDetails);
+            return mapMinNinResponse(identityResponse);
         }
 
         const otp = generateOTP();
-        const orderReference = generateRandomReference();
-        const transactionDetails = mapTransactionDetails(requestPayload.request_ref, requestPayload.transaction.transaction_ref, requestPayload, mapMinNinResponse(identityResponse, orderReference), CONSTANTS.REQUEST_TYPES.TRANSACT, orderReference, true, orderReference);
-        await this.storeTransaction(transactionDetails);
+        const transactionDetails = mapTransactionDetails(requestPayload.request_ref, requestPayload.transaction.transaction_ref, requestPayload, identityResponse, mapMinNinResponse(identityResponse, orderReference), CONSTANTS.REQUEST_TYPES.TRANSACT, orderReference, true, otp);
+        await new Transaction().createTransaction(transactionDetails);
 
         const smsData = {
             senderName: 'OnePipe - Verify OTP',
@@ -370,7 +482,19 @@ class BaseService {
         };
     }
 
-    async lookupNinMidService(requestPayload) {
+    async lookupNinMidService(request) {
+        const requestPayload = request.data;
+        const orderReference = generateRandomReference();
+
+        if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.VALIDATE) {
+            return await this.validateOtp(requestPayload);
+        }
+
+        if (requestPayload.auth.route_mode != CONSTANTS.REQUEST_TYPES.TRANSACT) {
+            logger.error('Request mode has to be passed as transact to make a service call');
+            throw new InvalidRequestModeError('Request mode has to be passed as transact to make a service call');
+        }
+        
         if (!requestPayload.transaction.customer.customer_ref) {
             logger.error(`Missing parameter customer_ref [nin mid]`);
             throw new InvalidParamsError(`Missing parameter customer_ref [nin mid]`);
@@ -389,16 +513,14 @@ class BaseService {
         }
 
         if ((requestPayload.transaction.details && requestPayload.transaction.details.otp_override == true) || (requestPayload.transaction.app_info && requestPayload.transaction.app_info.extras && requestPayload.transaction.app_info.extras.otp_override == true)) {
-            const orderReference = generateRandomReference();
-            const transactionDetails = mapTransactionDetails(requestPayload.request_ref, requestPayload.transaction.transaction_ref, requestPayload, mapMidNinResponse(identityResponse, orderReference), CONSTANTS.REQUEST_TYPES.TRANSACT, orderReference, true, null);
+            const transactionDetails = mapTransactionDetails(requestPayload.request_ref, requestPayload.transaction.transaction_ref, requestPayload, identityResponse, mapMidNinResponse(identityResponse, orderReference), CONSTANTS.REQUEST_TYPES.TRANSACT, orderReference, true, null);
             await this.storeTransaction(transactionDetails);
-            return identityResponse;
+            return mapMidNinResponse(identityResponse);
         }
 
         const otp = generateOTP();
-        const orderReference = generateRandomReference();
-        const transactionDetails = mapTransactionDetails(requestPayload.request_ref, requestPayload.transaction.transaction_ref, requestPayload, mapMidNinResponse(identityResponse, orderReference), CONSTANTS.REQUEST_TYPES.TRANSACT, orderReference, true, otp);
-        await this.storeTransaction(transactionDetails);
+        const transactionDetails = mapTransactionDetails(requestPayload.request_ref, requestPayload.transaction.transaction_ref, requestPayload, identityResponse, mapMinNinResponse(identityResponse, orderReference), CONSTANTS.REQUEST_TYPES.TRANSACT, orderReference, true, otp);
+        await new Transaction().createTransaction(transactionDetails);
 
         const smsData = {
             senderName: 'OnePipe - Verify OTP',
@@ -429,11 +551,33 @@ class BaseService {
         return JSON.parse(transaction.provider_response);
     }
 
+
+    async queryTransactionBuilder(requestPayload, transactionData) {
+        const fetchedTransaction = null;
+        const transaction = await new Transaction().fetchTransactionByReference(transactionData);
+        if (transaction.providerResponse !== 'success') {
+            if ((requestPayload.auth && requestPayload.auth.secure == ';') && (!requestPayload.transaction.app_info || !requestPayload.transaction.app_info.extras || requestPayload.transaction.app_info.extras.phone_number == '')) {
+                logger.error('Invalid authentication details - No authentication detail');
+                throw new AutheticationError(ResponseMessages.NO_AUTH_DETAILS_PROVIDED);
+            }
+
+            const authUserData = await authUser(requestPayload);
+            const payantFetchedTransaction = getTransactionStatus(authUserData.token, transaction.providerTransactionRef);
+
+            fetchedTransaction = payantFetchedTransaction.data.response_payload.data.msg.results;
+        } else {
+            fetchedTransaction = JSON.parse(transaction.mappedResponse);
+        }
+
+        return fetchedTransaction;
+    }
+
     /**
      * Store transaction for each request made
      * @param {request paylaod && response payload} transactionDetails 
      */
-    async storeTransaction(transactionDetails) {
+    async storeTransaction(request, serviceRawResponse, mappedResponse) {
+        const transactionDetails = mapTransactionDetails(request.request_ref, request.transaction.transaction_ref, request, serviceRawResponse, mappedResponse, CONSTANTS.REQUEST_TYPES.TRANSACT);
         await new Transaction().createTransaction(transactionDetails);
     }
 }

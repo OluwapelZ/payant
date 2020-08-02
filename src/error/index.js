@@ -20,6 +20,8 @@ const TransactionNotFoundError = createCustomError('TransactionNotFoundError', {
 
 const InvalidOtpError = createCustomError('InvalidOtpError', { code: 'INVALID_OTP' });
 
+const AutheticationError = createCustomError('AuthenticationError', { code: 'AUTHENTICATION_ERROR' });
+
 module.exports = {
     InvalidRequestModeError,
     BillerProductError,
@@ -30,5 +32,6 @@ module.exports = {
     ProviderResponseError,
     TransactionNotFoundError,
     CustomerVerificationError,
-    InvalidOtpError
+    InvalidOtpError,
+    AutheticationError
 };

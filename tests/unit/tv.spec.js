@@ -30,7 +30,7 @@ describe('Tv Service', () => {
         requestPayload.transaction.details.biller_id = 'invalid_tv';
         requestPayload.transaction.details.order_reference = 'sfsfsdf';
         try {
-            await baseService.baseService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            await baseService.buyTvService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
             done();
         } catch (error) {
             expect(fetchTransactionByRefMock).toHaveBeenCalled();
@@ -48,7 +48,7 @@ describe('Tv Service', () => {
         requestPayload.transaction.details.biller_item_id = 900
         requestPayload.transaction.details.order_reference = 'sfsfsdf';
         try {
-            await baseService.baseService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            await baseService.buyTvService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
             done();
         } catch (error) {
             expect(fetchTransactionByRefMock).toHaveBeenCalled();
@@ -67,7 +67,7 @@ describe('Tv Service', () => {
         requestPayload.transaction.details.order_reference = 'sfsfsdf';
         delete requestPayload.transaction.amount;
         try {
-            await baseService.baseService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            await baseService.buyTvService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
             done();
         } catch (error) {
             expect(fetchTransactionByRefMock).toHaveBeenCalled();
@@ -87,7 +87,7 @@ describe('Tv Service', () => {
         requestPayload.transaction.amount = 990
         payantServiceApiCall.mockResolvedValue({status: 'pending'});
         try {
-            await baseService.baseService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            await baseService.buyTvService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
             done();
         } catch (error) {
             expect(fetchTransactionByRefMock).toHaveBeenCalled();
@@ -107,7 +107,7 @@ describe('Tv Service', () => {
         requestPayload.transaction.amount = 990
         payantServiceApiCall.mockResolvedValue({status: 'success'});
         try {
-            await baseService.baseService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            await baseService.buyTvService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
 
             expect(fetchTransactionByRefMock).toHaveBeenCalled();
             expect(payantServiceApiCall).toHaveBeenCalled();
