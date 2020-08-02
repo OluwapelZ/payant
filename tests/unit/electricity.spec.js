@@ -24,7 +24,7 @@ describe('Electricity Service', () => {
 
     it('should throw error when request mode is not options', async (done) => {
         try {
-            await baseService.baseService({data: invalidData, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            await baseService.buyElectricityService({data: invalidData, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
             done();
         } catch (error) {
             expect(error instanceof InvalidRequestModeError).toBe(true);
@@ -40,7 +40,7 @@ describe('Electricity Service', () => {
         requestPayload.transaction.details.biller_id = null;
         requestPayload.transaction.details.order_reference = 'sfsfsdf';
         try {
-            await baseService.baseService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            await baseService.buyElectricityService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
             done();
         } catch (error) {
             expect(fetchTransactionByRefMock).toHaveBeenCalled();
@@ -57,7 +57,7 @@ describe('Electricity Service', () => {
         requestPayload.transaction.details.biller_id = 'invalid_biller';
         requestPayload.transaction.details.order_reference = 'sfsfsdf';
         try {
-            await baseService.baseService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            await baseService.buyElectricityService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
             done();
         } catch (error) {
             expect(fetchTransactionByRefMock).toHaveBeenCalled();
@@ -75,7 +75,7 @@ describe('Electricity Service', () => {
         requestPayload.transaction.details.order_reference = 'sfsfsdf';
         payantServiceApiCall.mockResolvedValue({status: 'pending'});
         try {
-            await baseService.baseService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            await baseService.buyElectricityService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
             done();
         } catch (error) {
             expect(fetchTransactionByRefMock).toHaveBeenCalled();
@@ -93,7 +93,7 @@ describe('Electricity Service', () => {
         requestPayload.transaction.details.order_reference = 'sfsfsdf';
         delete requestPayload.transaction.amount;
         try {
-            await baseService.baseService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            await baseService.buyElectricityService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
             done();
         } catch (error) {
             expect(fetchTransactionByRefMock).toHaveBeenCalled();
@@ -111,7 +111,7 @@ describe('Electricity Service', () => {
         requestPayload.transaction.details.order_reference = 'sfsfsdf';
         payantServiceApiCall.mockResolvedValue({status: 'success'});
         try {
-            await baseService.baseService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            await baseService.buyElectricityService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
 
             expect(fetchTransactionByRefMock).toHaveBeenCalled();
             expect(payantServiceApiCall).toHaveBeenCalled();

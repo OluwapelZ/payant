@@ -85,6 +85,7 @@ describe('Product Listing', () => {
         const createTransactionMock = (Transaction.prototype.createTransaction = jest.fn());
         const requestPayload = Object.assign({}, invalidData);
         requestPayload.auth.route_mode = 'options';
+        requestPayload.transaction.transaction_ref = '2kjoijodjfsdf';
         requestPayload.transaction.details = {
             biller_id: 'dstv'
         };

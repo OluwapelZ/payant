@@ -3,6 +3,8 @@ const config = {
     payant_identity_verification_base_url: process.env.IDENTITY_BASE_URL,
     payant_service_list: process.env.LIST_SERVICES_URL,
     payant_identity_api_key: process.env.IDENTITY_API_KEY,
+    api_logger_url: process.env.API_LOGGER_URL,
+    api_logger_bearer_token: process.env.API_LOGGER_TOKEN,
     one_pipe_sms_url: process.env.ONE_PIPE_SMS_URL,
     auth: {
         username: process.env.BASIC_AUTH_USERNAME,
