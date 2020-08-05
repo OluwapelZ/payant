@@ -24,7 +24,7 @@ describe('Airtime Service', () => {
 
     it('should throw error when request mode is not options', async (done) => {
         try {
-            await baseService.baseService({data: invalidData, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            await baseService.buyAirtimeService({data: invalidData, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
             done()
         } catch (error) {
             expect(error instanceof InvalidRequestModeError).toBe(true);
@@ -32,19 +32,17 @@ describe('Airtime Service', () => {
         }
     });
 
-    it('should throw error when provider does not currently implement provided service', async (done) => {
+    it('should throw error when request type is not buy_airtime', async (done) => {
         const requestPayload = Object.assign({}, invalidData);
         requestPayload.auth.route_mode = 'transact';
-        const fetchTransactionByRefMock = (Transaction.prototype.fetchTransactionByOrderRef = jest.fn());
         requestPayload.request_type = 'not_implemented';
         requestPayload.transaction.details.order_reference = 'sdfdsf';
         try {
-            await baseService.baseService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            await baseService.buyAirtimeService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
             done()
         } catch (error) {
             console.log(error.stack)
-            expect(fetchTransactionByRefMock).toHaveBeenCalled();
-            expect(error instanceof ServiceNotImplementedError).toBe(true);
+            expect(error instanceof InvalidParamsError).toBe(true);
             done();
         }
     });
@@ -57,7 +55,7 @@ describe('Airtime Service', () => {
         requestPayload.transaction.details.telco_code = 'invalid_telco_code';
         requestPayload.transaction.details.order_reference = 'sfsfsdf';
         try {
-            await baseService.baseService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            await baseService.buyAirtimeService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
             done()
         } catch (error) {
             expect(fetchTransactionByRefMock).toHaveBeenCalled();
@@ -75,7 +73,7 @@ describe('Airtime Service', () => {
         delete requestPayload.transaction.amount;
         delete requestPayload.transaction.customer.customer_ref
         try {
-            await baseService.baseService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            await baseService.buyAirtimeService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
             done();
         } catch (error) {
             expect(fetchTransactionByRefMock).toHaveBeenCalled();
@@ -93,7 +91,7 @@ describe('Airtime Service', () => {
         requestPayload.transaction.amount = 1000;
         requestPayload.transaction.customer.customer_ref = '09056351003'
         try {
-            await baseService.baseService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            await baseService.buyAirtimeService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
 
             expect(fetchTransactionByRefMock).toHaveBeenCalled();
             expect(payantServiceApiCall).toHaveBeenCalled();

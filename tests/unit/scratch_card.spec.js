@@ -30,7 +30,7 @@ describe('Scratch Card Service', () => {
         delete requestPayload.transaction.details.biller_id;
         requestPayload.transaction.details.order_reference = 'sfsfsdf';
         try {
-            await baseService.baseService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            await baseService.buyScratchCardService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
             done();
         } catch (error) {
             expect(fetchTransactionByRefMock).toHaveBeenCalled();
@@ -47,7 +47,7 @@ describe('Scratch Card Service', () => {
         requestPayload.transaction.details.biller_id = 'invalid_tv';
         requestPayload.transaction.details.order_reference = 'sfsfsdf';
         try {
-            await baseService.baseService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            await baseService.buyScratchCardService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
             done();
         } catch (error) {
             expect(fetchTransactionByRefMock).toHaveBeenCalled();
@@ -65,7 +65,7 @@ describe('Scratch Card Service', () => {
         delete requestPayload.transaction.amount;
         requestPayload.transaction.details.order_reference = 'sfsfsdf';
         try {
-            await baseService.baseService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            await baseService.buyScratchCardService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
             done()
         } catch (error) {
             expect(fetchTransactionByRefMock).toHaveBeenCalled();
@@ -84,7 +84,7 @@ describe('Scratch Card Service', () => {
     //     requestPayload.transaction.details.order_reference = 'sfsfsdf';
     //     payantServiceApiCall.mockResolvedValue({status: 'success'});
         
-    //     await baseService.baseService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+    //     await baseService.buyScratchCardService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
 
     //     expect(fetchTransactionByRefMock).toHaveBeenCalled();
     //     expect(payantServiceApiCall).toHaveBeenCalled();
