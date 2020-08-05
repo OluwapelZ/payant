@@ -1,5 +1,6 @@
-const config = require('./src/config/config');
+require('dotenv').config();
 
+const config = require('./src/config/config');
 module.exports = {
   client: 'mysql2',
   connection: {

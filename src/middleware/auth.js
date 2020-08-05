@@ -24,6 +24,8 @@ module.exports = async (req, res, next) => {
             next();
         }
 
+        
+
         if ((requestPayload.auth && requestPayload.auth.secure == ';') && (!requestPayload.transaction.app_info || !requestPayload.transaction.app_info.extras || requestPayload.transaction.app_info.extras.phone_number == '')) {
             logger.error('Invalid authentication details - No authentication detail');
             return failed(res, 401, ResponseMessages.NO_AUTH_DETAILS_PROVIDED);

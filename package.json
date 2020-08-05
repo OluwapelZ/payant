@@ -6,13 +6,14 @@
     "dev": "nodemon ./bin/www",
     "start": "node ./bin/www",
     "test": "jest",
-    "rollback": "NODE_PATH=. knex migrate:rollback",
-    "migrate": "NODE_PATH=. knex migrate:latest"
+    "rollback": "cross-env NODE_PATH=. knex migrate:rollback",
+    "migrate": "cross-env NODE_PATH=. knex migrate:latest"
   },
   "dependencies": {
     "axios": "^0.19.2",
     "bookshelf": "^1.1.1",
     "cookie-parser": "~1.4.4",
+    "cross-env": "^7.0.2",
     "crypto": "^1.0.1",
     "crypto-js": "^4.0.0",
     "custom-error-generator": "^7.0.0",

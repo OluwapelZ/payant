@@ -23,7 +23,7 @@ function mapWaitingForOTP(message, reference) {
         status: CONSTANTS.REQUEST_STATUSES.WAITING_FOR_OTP,
         message: message,
         data: {
-            provider_response_code: 00,
+            provider_response_code: "00",
             provider: "Payant",
             errors: null,
             error: null,
