@@ -25,8 +25,7 @@ const { decryptData } = require('../utils/crypt');
 const logger = require('../utils/logger');
 
 class BaseService {
-    async  queryTransaction(request) {
-        const requestPayload = decryptData(request);
+    async queryTransaction(requestPayload) {
         const serviceResponse = null;
         const transaction = null;
 
@@ -76,8 +75,7 @@ class BaseService {
         return serviceResponse;
     }
 
-    async listProviderServices(requestPayload) {
-        const request = requestPayload.data;
+    async listProviderServices(request, token) {
         if (request.auth.route_mode != CONSTANTS.REQUEST_TYPES.OPTIONS) {
             logger.error('Request mode has to be passed as options to make an option call');
             throw new InvalidRequestModeError('Request mode has to be passed as options to make an option call');
@@ -101,14 +99,14 @@ class BaseService {
                 throw new CustomerVerificationError(`Missing parameter customer_ref for service "${request.request_type}"`);
             }
 
-            const verifyCustomer = await payantServiceApiCall(requestPayload.token, `${CONSTANTS.URL_PATHS.list_services_products}/${billerId}/verify`, { account: request.transaction.customer.customer_ref });
+            const verifyCustomer = await payantServiceApiCall(token, `${CONSTANTS.URL_PATHS.list_services_products}/${billerId}/verify`, { account: request.transaction.customer.customer_ref });
             if (verifyCustomer.status != CONSTANTS.PAYANT_STATUS_TYPES.successful) {
                 logger.error(`Customer unique reference verification with biller ${request.transaction.details.biller_id} failed: ${verifyCustomer.message}`);
                 throw new CustomerVerificationError(`Customer unique reference verification with biller ${request.transaction.details.biller_id} failed: ${verifyCustomer.message}`);
             } // Continue with product listing if verification was successful
         }
 
-        const services = await listServiceProductsAPI(requestPayload.token, billerId, (request.transaction.customer.customer_ref) ? request.transaction.customer.customer_ref : null);
+        const services = await listServiceProductsAPI(token, billerId, (request.transaction.customer.customer_ref) ? request.transaction.customer.customer_ref : null);
 
         if (services.status == CONSTANTS.PAYANT_STATUS_TYPES.error) {
             logger.error(`An error occured on attempt to fetch "${request.request_type}" service products: ${services.message}`);
@@ -128,9 +126,17 @@ class BaseService {
         const requestPayload = request.data;
         const token = request.token;
 
-        if (requestPayload.auth.route_mode != CONSTANTS.REQUEST_TYPES.TRANSACT) {
-            logger.error('Request mode has to be passed as transact to make a service call');
-            throw new InvalidRequestModeError('Request mode has to be passed as transact to make a service call');
+        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.auth.route_mode)) {
+            logger.error('Request mode was not provided');
+            throw new InvalidRequestModeError('Request mode was not provided');
+        }
+
+        if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.QUERY) {
+            return await this.queryTransaction(requestPayload);
+        }
+
+        if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.OPTIONS) {
+            return await this.listProviderServices(requestPayload, token);
         }
 
         if (requestPayload.request_type != CONSTANTS.REQUEST_TYPES.BUY_AIRTIME) {
@@ -194,9 +200,17 @@ class BaseService {
         const requestPayload = request.data;
         const token = request.token;
 
-        if (requestPayload.auth.route_mode != CONSTANTS.REQUEST_TYPES.TRANSACT) {
-            logger.error('Request mode has to be passed as transact to make a service call');
-            throw new InvalidRequestModeError('Request mode has to be passed as transact to make a service call');
+        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.auth.route_mode)) {
+            logger.error('Request mode was not provided');
+            throw new InvalidRequestModeError('Request mode was not provided');
+        }
+
+        if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.QUERY) {
+            return await this.queryTransaction(requestPayload);
+        }
+
+        if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.OPTIONS) {
+            return await this.listProviderServices(requestPayload, token);
         }
 
         if (requestPayload.request_type != CONSTANTS.REQUEST_TYPES.BUY_DATA) {
@@ -262,9 +276,17 @@ class BaseService {
         const requestPayload = request.data;
         const token = request.token;
 
-        if (requestPayload.auth.route_mode != CONSTANTS.REQUEST_TYPES.TRANSACT) {
-            logger.error('Request mode has to be passed as transact to make a service call');
-            throw new InvalidRequestModeError('Request mode has to be passed as transact to make a service call');
+        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.auth.route_mode)) {
+            logger.error('Request mode was not provided');
+            throw new InvalidRequestModeError('Request mode was not provided');
+        }
+
+        if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.QUERY) {
+            return await this.queryTransaction(requestPayload);
+        }
+
+        if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.OPTIONS) {
+            return await this.listProviderServices(requestPayload, token);
         }
 
         if (requestPayload.request_type != CONSTANTS.REQUEST_TYPES.PAY_ELECTRICITY) {
@@ -323,9 +345,17 @@ class BaseService {
         const requestPayload = request.data;
         const token = request.token;
 
-        if (requestPayload.auth.route_mode != CONSTANTS.REQUEST_TYPES.TRANSACT) {
-            logger.error('Request mode has to be passed as transact to make a service call');
-            throw new InvalidRequestModeError('Request mode has to be passed as transact to make a service call');
+        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.auth.route_mode)) {
+            logger.error('Request mode was not provided');
+            throw new InvalidRequestModeError('Request mode was not provided');
+        }
+
+        if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.QUERY) {
+            return await this.queryTransaction(requestPayload);
+        }
+
+        if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.OPTIONS) {
+            return await this.listProviderServices(requestPayload, token);
         }
 
         if (requestPayload.request_type != CONSTANTS.REQUEST_TYPES.PAY_TV) {
@@ -384,9 +414,17 @@ class BaseService {
         const requestPayload = request.data;
         const token = request.token;
 
-        if (requestPayload.auth.route_mode != CONSTANTS.REQUEST_TYPES.TRANSACT) {
-            logger.error('Request mode has to be passed as transact to make a service call');
-            throw new InvalidRequestModeError('Request mode has to be passed as transact to make a service call');
+        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.auth.route_mode)) {
+            logger.error('Request mode was not provided');
+            throw new InvalidRequestModeError('Request mode was not provided');
+        }
+
+        if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.QUERY) {
+            return await this.queryTransaction(requestPayload);
+        }
+
+        if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.OPTIONS) {
+            return await this.listProviderServices(requestPayload, token);
         }
         
         if (requestPayload.request_type != CONSTANTS.REQUEST_TYPES.BUY_SCRATCH_CARD) {
@@ -433,13 +471,17 @@ class BaseService {
         const requestPayload = request.data;
         const orderReference = generateRandomReference();
 
+        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.auth.route_mode)) {
+            logger.error('Request mode was not provided');
+            throw new InvalidRequestModeError('Request mode was not provided');
+        }
+
         if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.VALIDATE) {
             return await this.validateOtp(requestPayload);
         }
 
-        if (requestPayload.auth.route_mode != CONSTANTS.REQUEST_TYPES.TRANSACT) {
-            logger.error('Request mode has to be passed as transact to make a service call');
-            throw new InvalidRequestModeError('Request mode has to be passed as transact to make a service call');
+        if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.QUERY) {
+            return await this.queryTransaction(requestPayload);
         }
         if (!requestPayload.auth.secure) {
             logger.error(`Missing NIN in auth secure [nin mid]`);
@@ -490,13 +532,17 @@ class BaseService {
         const requestPayload = request.data;
         const orderReference = generateRandomReference();
 
+        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.auth.route_mode)) {
+            logger.error('Request mode was not provided');
+            throw new InvalidRequestModeError('Request mode was not provided');
+        }
+
         if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.VALIDATE) {
             return await this.validateOtp(requestPayload);
         }
 
-        if (requestPayload.auth.route_mode != CONSTANTS.REQUEST_TYPES.TRANSACT) {
-            logger.error('Request mode has to be passed as transact to make a service call');
-            throw new InvalidRequestModeError('Request mode has to be passed as transact to make a service call');
+        if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.QUERY) {
+            return await this.queryTransaction(requestPayload);
         }
         
         if (!requestPayload.auth.secure) {

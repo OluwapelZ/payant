@@ -20,16 +20,6 @@ describe('Airtime Service', () => {
     it('service should be defined', (done) => {
         expect(baseService).toBeDefined();
         done();
-    })
-
-    it('should throw error when request mode is not options', async (done) => {
-        try {
-            await baseService.buyAirtimeService({data: invalidData, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
-            done()
-        } catch (error) {
-            expect(error instanceof InvalidRequestModeError).toBe(true);
-            done();
-        }
     });
 
     it('should throw error when request type is not buy_airtime', async (done) => {

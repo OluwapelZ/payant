@@ -13,9 +13,6 @@ router.get('/health', function(req, res, next) {
   })
 });
 
-// Transact options
-router.post('/transact/options', authMiddleware.authenticatePayantUser, baseController.listProviderProducts);
-
 //Transact
 router.post('/buy_airtime', authMiddleware.authenticatePayantUser, baseController.buyAirtime);
 router.post('/buy_data', authMiddleware.authenticatePayantUser, baseController.buyData);
@@ -24,8 +21,5 @@ router.post('/look_up_nin_min', authMiddleware.authenticatePayantUser, baseContr
 router.post('/look_up_nin_mid', authMiddleware.authenticatePayantUser, baseController.lookupNinMid);
 router.post('/pay_tv', authMiddleware.authenticatePayantUser, baseController.payTv);
 router.post('/pay_electricity', authMiddleware.authenticatePayantUser, baseController.payElectricity);
-
-//Query Transactions
-router.post('/transact/query', baseController.query);
 
 module.exports = router;
