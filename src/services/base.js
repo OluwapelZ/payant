@@ -441,16 +441,20 @@ class BaseService {
             logger.error('Request mode has to be passed as transact to make a service call');
             throw new InvalidRequestModeError('Request mode has to be passed as transact to make a service call');
         }
-
-        if (!requestPayload.transaction.customer.customer_ref) {
-            logger.error(`Missing parameter customer_ref [nin min]`);
-            throw new InvalidParamsError(`Missing parameter customer_ref [nin min]`);
+        if (!requestPayload.auth.secure) {
+            logger.error(`Missing NIN in auth secure [nin mid]`);
+            throw new InvalidParamsError(`Missing parameter NIN in auth secure [nin mid]`);
+        }
+        if (!requestPayload.transaction.app_info.extras["secret_key"]) {
+            logger.error(`Missing parameter secret keyin app extras [nin min]`);
+            throw new InvalidParamsError(`Missing parameter secret keyin app extras [nin min]`);
         }
 
         const postDetails = {
             method: 'SMS',
             type: 'NIN',
-            number: requestPayload.transaction.customer.customer_ref
+            number: requestPayload.auth.secure,
+            secretKey : requestPayload.transaction.app_info.extras["secret_key"]
         };
         const identityResponse = await payantIdentityApiCall(postDetails);
 
@@ -495,15 +499,20 @@ class BaseService {
             throw new InvalidRequestModeError('Request mode has to be passed as transact to make a service call');
         }
         
-        if (!requestPayload.transaction.customer.customer_ref) {
-            logger.error(`Missing parameter customer_ref [nin mid]`);
-            throw new InvalidParamsError(`Missing parameter customer_ref [nin mid]`);
+        if (!requestPayload.auth.secure) {
+            logger.error(`Missing NIN in auth secure [nin mid]`);
+            throw new InvalidParamsError(`Missing parameter NIN in auth secure [nin mid]`);
+        }
+        if (!requestPayload.transaction.app_info.extras["secret_key"]) {
+            logger.error(`Missing parameter secret keyin app extras [nin mid]`);
+            throw new InvalidParamsError(`Missing parameter secret keyin app extras [nin mid]`);
         }
 
         const postDetails = {
             method: 'SMS',
             type: 'NIN',
-            number: requestPayload.transaction.customer.customer_ref
+            number: requestPayload.auth.secure,
+            secretKey : requestPayload.transaction.app_info.extras["secret_key"]
         };
         const identityResponse = await payantIdentityApiCall(postDetails);
 

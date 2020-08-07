@@ -95,7 +95,7 @@ function payantServiceApiCall(token, url_path, requestPayload, callback) {
 function payantIdentityApiCall(requestPayload) {
     const requestHeaders = {
         headers: {
-            Authorization: `Bearer ${config.payant_identity_api_key}`
+            Authorization: `Bearer ${requestPayload.secretKey}`
         }
     };
     requestHeaders.headers['Content-Type'] = 'application/json';
