@@ -18,81 +18,297 @@ describe('Product Listing', () => {
         done();
     })
 
-    it('should throw error when request mode is not options', async (done) => {
-        try {
-            await baseService.listProviderServices({data: invalidData, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
-        } catch (error) {
-            expect(error instanceof InvalidRequestModeError).toBe(true);
+    describe('Airtime production listing', () => {
+        it('should throw error if details object was not sent with request payload', async (done) => {
+            const requestPayload = Object.assign({}, invalidData);
+            requestPayload.auth.route_mode = 'options';
+            delete requestPayload.transaction.details;
+            try {
+                await baseService.buyAirtimeService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            } catch (error) {
+                expect(error instanceof BillerProductError).toBe(true);
+                done();
+            }
+        });
+    
+        it('should throw error if provider does not support the provided biller', async (done) => {
+            const requestPayload = Object.assign({}, invalidData);
+            requestPayload.auth.route_mode = 'options';
+            requestPayload.transaction.details = {
+                biller_id: 'cuptv'
+            }
+            try {
+                await baseService.buyAirtimeService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            } catch (error) {
+                expect(error instanceof BillerNotSupportedError).toBe(true);
+                done();
+            }
+        });
+    
+        it('should throw error when payant returns error', async (done) => {
+            listServiceProductsAPI.mockResolvedValue({status: 'error'});
+            const requestPayload = Object.assign({}, invalidData);
+            requestPayload.auth.route_mode = 'options';
+            requestPayload.transaction.details = {
+                biller_id: 'dstv'
+            }
+            try {
+                await baseService.buyAirtimeService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            } catch (error) {
+                expect(listServiceProductsAPI).toHaveBeenCalled();
+                expect(error instanceof ServiceProductCategoryError).toBe(true);
+                done();
+            }
+        });
+    
+        it('should successfully return biller item lists', async (done) => {
+            listServiceProductsAPI.mockResolvedValue(optionsProviderResponse);
+            const createTransactionMock = (Transaction.prototype.createTransaction = jest.fn());
+            const requestPayload = Object.assign({}, invalidData);
+            requestPayload.auth.route_mode = 'options';
+            requestPayload.transaction.transaction_ref = '2kjoijodjfsdf';
+            requestPayload.transaction.details = {
+                biller_id: 'dstv'
+            };
+    
+            await baseService.buyAirtimeService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            expect(createTransactionMock).toHaveBeenCalled();
             done();
-        }
+        }); 
     });
 
-    it('should throw error if biller id was not sent with request payload', async (done) => {
-        const requestPayload = Object.assign({}, invalidData);
-        requestPayload.auth.route_mode = 'options';
-        try {
-            await baseService.listProviderServices({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
-        } catch (error) {
-            expect(error instanceof BillerProductError).toBe(true);
+    describe('Data production listing', () => {
+        it('should throw error if details object was not sent with request payload', async (done) => {
+            const requestPayload = Object.assign({}, invalidData);
+            requestPayload.auth.route_mode = 'options';
+            delete requestPayload.transaction.details;
+            try {
+                await baseService.buyDataService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            } catch (error) {
+                expect(error instanceof BillerProductError).toBe(true);
+                done();
+            }
+        });
+    
+        it('should throw error if provider does not support the provided biller', async (done) => {
+            const requestPayload = Object.assign({}, invalidData);
+            requestPayload.auth.route_mode = 'options';
+            requestPayload.transaction.details = {
+                biller_id: 'cuptv'
+            }
+            try {
+                await baseService.buyDataService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            } catch (error) {
+                expect(error instanceof BillerNotSupportedError).toBe(true);
+                done();
+            }
+        });
+    
+        it('should throw error when payant returns error', async (done) => {
+            listServiceProductsAPI.mockResolvedValue({status: 'error'});
+            const requestPayload = Object.assign({}, invalidData);
+            requestPayload.auth.route_mode = 'options';
+            requestPayload.transaction.details = {
+                biller_id: 'dstv'
+            }
+            try {
+                await baseService.buyDataService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            } catch (error) {
+                expect(listServiceProductsAPI).toHaveBeenCalled();
+                expect(error instanceof ServiceProductCategoryError).toBe(true);
+                done();
+            }
+        });
+    
+        it('should successfully return biller item lists', async (done) => {
+            listServiceProductsAPI.mockResolvedValue(optionsProviderResponse);
+            const createTransactionMock = (Transaction.prototype.createTransaction = jest.fn());
+            const requestPayload = Object.assign({}, invalidData);
+            requestPayload.auth.route_mode = 'options';
+            requestPayload.transaction.transaction_ref = '2kjoijodjfsdf';
+            requestPayload.transaction.details = {
+                biller_id: 'dstv'
+            };
+    
+            await baseService.buyDataService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            expect(createTransactionMock).toHaveBeenCalled();
             done();
-        }
+        });
     });
 
-    it('should throw error if details object was not sent with request payload', async (done) => {
-        const requestPayload = Object.assign({}, invalidData);
-        requestPayload.auth.route_mode = 'options';
-        delete requestPayload.transaction.details;
-        try {
-            await baseService.listProviderServices({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
-        } catch (error) {
-            expect(error instanceof BillerProductError).toBe(true);
+    describe('Electricity production listing', () => {
+        it('should throw error if details object was not sent with request payload', async (done) => {
+            const requestPayload = Object.assign({}, invalidData);
+            requestPayload.auth.route_mode = 'options';
+            delete requestPayload.transaction.details;
+            try {
+                await baseService.buyElectricityService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            } catch (error) {
+                expect(error instanceof BillerProductError).toBe(true);
+                done();
+            }
+        });
+    
+        it('should throw error if provider does not support the provided biller', async (done) => {
+            const requestPayload = Object.assign({}, invalidData);
+            requestPayload.auth.route_mode = 'options';
+            requestPayload.transaction.details = {
+                biller_id: 'cuptv'
+            }
+            try {
+                await baseService.buyElectricityService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            } catch (error) {
+                expect(error instanceof BillerNotSupportedError).toBe(true);
+                done();
+            }
+        });
+    
+        it('should throw error when payant returns error', async (done) => {
+            listServiceProductsAPI.mockResolvedValue({status: 'error'});
+            const requestPayload = Object.assign({}, invalidData);
+            requestPayload.auth.route_mode = 'options';
+            requestPayload.transaction.details = {
+                biller_id: 'dstv'
+            }
+            try {
+                await baseService.buyElectricityService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            } catch (error) {
+                expect(listServiceProductsAPI).toHaveBeenCalled();
+                expect(error instanceof ServiceProductCategoryError).toBe(true);
+                done();
+            }
+        });
+    
+        it('should successfully return biller item lists', async (done) => {
+            listServiceProductsAPI.mockResolvedValue(optionsProviderResponse);
+            const createTransactionMock = (Transaction.prototype.createTransaction = jest.fn());
+            const requestPayload = Object.assign({}, invalidData);
+            requestPayload.auth.route_mode = 'options';
+            requestPayload.transaction.transaction_ref = '2kjoijodjfsdf';
+            requestPayload.transaction.details = {
+                biller_id: 'dstv'
+            };
+    
+            await baseService.buyElectricityService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            expect(createTransactionMock).toHaveBeenCalled();
             done();
-        }
+        });
     });
 
-    it('should throw error if provider does not support the provided biller', async (done) => {
-        const requestPayload = Object.assign({}, invalidData);
-        requestPayload.auth.route_mode = 'options';
-        requestPayload.transaction.details = {
-            biller_id: 'cuptv'
-        }
-        try {
-            await baseService.listProviderServices({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
-        } catch (error) {
-            expect(error instanceof BillerNotSupportedError).toBe(true);
+    describe('Tv production listing', () => {
+        it('should throw error if details object was not sent with request payload', async (done) => {
+            const requestPayload = Object.assign({}, invalidData);
+            requestPayload.auth.route_mode = 'options';
+            delete requestPayload.transaction.details;
+            try {
+                await baseService.buyElectricityService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            } catch (error) {
+                expect(error instanceof BillerProductError).toBe(true);
+                done();
+            }
+        });
+    
+        it('should throw error if provider does not support the provided biller', async (done) => {
+            const requestPayload = Object.assign({}, invalidData);
+            requestPayload.auth.route_mode = 'options';
+            requestPayload.transaction.details = {
+                biller_id: 'cuptv'
+            }
+            try {
+                await baseService.buyElectricityService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            } catch (error) {
+                expect(error instanceof BillerNotSupportedError).toBe(true);
+                done();
+            }
+        });
+    
+        it('should throw error when payant returns error', async (done) => {
+            listServiceProductsAPI.mockResolvedValue({status: 'error'});
+            const requestPayload = Object.assign({}, invalidData);
+            requestPayload.auth.route_mode = 'options';
+            requestPayload.transaction.details = {
+                biller_id: 'dstv'
+            }
+            try {
+                await baseService.buyElectricityService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            } catch (error) {
+                expect(listServiceProductsAPI).toHaveBeenCalled();
+                expect(error instanceof ServiceProductCategoryError).toBe(true);
+                done();
+            }
+        });
+    
+        it('should successfully return biller item lists', async (done) => {
+            listServiceProductsAPI.mockResolvedValue(optionsProviderResponse);
+            const createTransactionMock = (Transaction.prototype.createTransaction = jest.fn());
+            const requestPayload = Object.assign({}, invalidData);
+            requestPayload.auth.route_mode = 'options';
+            requestPayload.transaction.transaction_ref = '2kjoijodjfsdf';
+            requestPayload.transaction.details = {
+                biller_id: 'dstv'
+            };
+    
+            await baseService.buyElectricityService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            expect(createTransactionMock).toHaveBeenCalled();
             done();
-        }
+        });
     });
 
-    it('should throw error when payant returns error', async (done) => {
-        listServiceProductsAPI.mockResolvedValue({status: 'error'});
-        const requestPayload = Object.assign({}, invalidData);
-        requestPayload.auth.route_mode = 'options';
-        requestPayload.transaction.details = {
-            biller_id: 'dstv'
-        }
-        try {
-            await baseService.listProviderServices({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
-        } catch (error) {
-            expect(listServiceProductsAPI).toHaveBeenCalled();
-            expect(error instanceof ServiceProductCategoryError).toBe(true);
+    describe('Scratch Card production listing', () => {it('should throw error if details object was not sent with request payload', async (done) => {
+            const requestPayload = Object.assign({}, invalidData);
+            requestPayload.auth.route_mode = 'options';
+            delete requestPayload.transaction.details;
+            try {
+                await baseService.buyScratchCardService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            } catch (error) {
+                expect(error instanceof BillerProductError).toBe(true);
+                done();
+            }
+        });
+    
+        it('should throw error if provider does not support the provided biller', async (done) => {
+            const requestPayload = Object.assign({}, invalidData);
+            requestPayload.auth.route_mode = 'options';
+            requestPayload.transaction.details = {
+                biller_id: 'cuptv'
+            }
+            try {
+                await baseService.buyScratchCardService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            } catch (error) {
+                expect(error instanceof BillerNotSupportedError).toBe(true);
+                done();
+            }
+        });
+    
+        it('should throw error when payant returns error', async (done) => {
+            listServiceProductsAPI.mockResolvedValue({status: 'error'});
+            const requestPayload = Object.assign({}, invalidData);
+            requestPayload.auth.route_mode = 'options';
+            requestPayload.transaction.details = {
+                biller_id: 'dstv'
+            }
+            try {
+                await baseService.buyScratchCardService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            } catch (error) {
+                expect(listServiceProductsAPI).toHaveBeenCalled();
+                expect(error instanceof ServiceProductCategoryError).toBe(true);
+                done();
+            }
+        });
+    
+        it('should successfully return biller item lists', async (done) => {
+            listServiceProductsAPI.mockResolvedValue(optionsProviderResponse);
+            const createTransactionMock = (Transaction.prototype.createTransaction = jest.fn());
+            const requestPayload = Object.assign({}, invalidData);
+            requestPayload.auth.route_mode = 'options';
+            requestPayload.transaction.transaction_ref = '2kjoijodjfsdf';
+            requestPayload.transaction.details = {
+                biller_id: 'dstv'
+            };
+    
+            await baseService.buyScratchCardService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
+            expect(createTransactionMock).toHaveBeenCalled();
             done();
-        }
-    });
-
-    it('should successfully return biller item lists', async (done) => {
-        listServiceProductsAPI.mockResolvedValue(optionsProviderResponse);
-        const createTransactionMock = (Transaction.prototype.createTransaction = jest.fn());
-        const requestPayload = Object.assign({}, invalidData);
-        requestPayload.auth.route_mode = 'options';
-        requestPayload.transaction.transaction_ref = '2kjoijodjfsdf';
-        requestPayload.transaction.details = {
-            biller_id: 'dstv'
-        };
-
-        await baseService.listProviderServices({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
-        expect(createTransactionMock).toHaveBeenCalled();
-        done();
-
+        });
     });
 })
