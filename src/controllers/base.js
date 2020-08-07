@@ -13,69 +13,6 @@ const logger = require('../utils/logger');
 const BaseService = require('../services/base');
 
 class BaseController {
-
-    async query(req, res) {
-        try {
-            const serviceResponse = await new BaseService().queryTransaction(req.body);
-            return success(res, CONSTANTS.STATUS_CODES.SUCCESS, ResponseMessage.QUERY_REQUEST_SUCCESSFUL, serviceResponse);
-        } catch (err) {
-            if (err instanceof InvalidRequestModeError) {
-                failed(res, 400, err.message, err.stack);
-                throw err;
-            }
-    
-            if (err instanceof BillerProductError) {
-                failed(res, 500, err.message, err.stack);
-                throw err;
-            }
-    
-            if (err instanceof BillerNotSupportedError) {
-                failed(res, 500, err.message, err.stack);
-                throw err;
-            }
-    
-            if (err instanceof ServiceProductCategoryError) {
-                failed(res, 500, err.message, err.stack);
-                throw err;
-            }
-    
-            logger.error(`Internal Server Error: Error occured on querying transaction: ${err.message}`);
-            failed(res, 500, err.message, err.stack);
-            throw err;
-        }
-    }
-
-    async listProviderProducts(req, res) {
-        try {
-            const products = await new BaseService().listProviderServices(req.body);
-            optionsSuccess(res, CONSTANTS.STATUS_CODES.SUCCESS, products)
-        } catch (err) {
-            if (err instanceof InvalidRequestModeError) {
-                failed(res, 400, err.message, err.stack);
-                throw err;
-            }
-
-            if (err instanceof BillerProductError) {
-                failed(res, 500, err.message, err.stack);
-                throw err;
-            }
-
-            if (err instanceof BillerNotSupportedError) {
-                failed(res, 500, err.message, err.stack);
-                throw err;
-            }
-
-            if (err instanceof ServiceProductCategoryError) {
-                failed(res, 500, err.message, err.stack);
-                throw err;
-            }
-
-            logger.error(`Internal Server Error: Error occured on listing available provider products: ${err.message}`);
-            failed(res, 500, err.message, err.stack);
-            throw err;
-        }
-    }
-
     async buyAirtime(req, res) {
         try {
             const serviceResponse = await new BaseService().buyAirtimeService(req.body);
@@ -97,6 +34,16 @@ class BaseController {
             }
 
             if (err instanceof BillerNotSupportedError) {
+                failed(res, 500, err.message, err.stack);
+                throw err;
+            }
+
+            if (err instanceof BillerProductError) {
+                failed(res, 500, err.message, err.stack);
+                throw err;
+            }
+
+            if (err instanceof ServiceProductCategoryError) {
                 failed(res, 500, err.message, err.stack);
                 throw err;
             }
@@ -132,6 +79,16 @@ class BaseController {
                 throw err;
             }
 
+            if (err instanceof BillerProductError) {
+                failed(res, 500, err.message, err.stack);
+                throw err;
+            }
+
+            if (err instanceof ServiceProductCategoryError) {
+                failed(res, 500, err.message, err.stack);
+                throw err;
+            }
+
             logger.error(`Internal Server Error: Error occured on making transact request: ${err.message}`);
             failed(res, 500, err.message, err.stack);
             throw err;  
@@ -159,6 +116,16 @@ class BaseController {
             }
 
             if (err instanceof BillerNotSupportedError) {
+                failed(res, 500, err.message, err.stack);
+                throw err;
+            }
+
+            if (err instanceof BillerProductError) {
+                failed(res, 500, err.message, err.stack);
+                throw err;
+            }
+
+            if (err instanceof ServiceProductCategoryError) {
                 failed(res, 500, err.message, err.stack);
                 throw err;
             }
@@ -194,6 +161,16 @@ class BaseController {
                 throw err;
             }
 
+            if (err instanceof BillerProductError) {
+                failed(res, 500, err.message, err.stack);
+                throw err;
+            }
+
+            if (err instanceof ServiceProductCategoryError) {
+                failed(res, 500, err.message, err.stack);
+                throw err;
+            }
+
             logger.error(`Internal Server Error: Error occured on making transact request: ${err.message}`);
             failed(res, 500, err.message, err.stack);
             throw err;
@@ -221,6 +198,16 @@ class BaseController {
             }
 
             if (err instanceof BillerNotSupportedError) {
+                failed(res, 500, err.message, err.stack);
+                throw err;
+            }
+
+            if (err instanceof BillerProductError) {
+                failed(res, 500, err.message, err.stack);
+                throw err;
+            }
+
+            if (err instanceof ServiceProductCategoryError) {
                 failed(res, 500, err.message, err.stack);
                 throw err;
             }
@@ -258,6 +245,16 @@ class BaseController {
                 throw err;
             }
 
+            if (err instanceof BillerProductError) {
+                failed(res, 500, err.message, err.stack);
+                throw err;
+            }
+
+            if (err instanceof ServiceProductCategoryError) {
+                failed(res, 500, err.message, err.stack);
+                throw err;
+            }
+
             logger.error(`Internal Server Error: Error occured on making transact request: ${err.message}`);
             failed(res, 500, err.message, err.stack);
             throw err;  
@@ -287,6 +284,16 @@ class BaseController {
             }
 
             if (err instanceof BillerNotSupportedError) {
+                failed(res, 500, err.message, err.stack);
+                throw err;
+            }
+
+            if (err instanceof BillerProductError) {
+                failed(res, 500, err.message, err.stack);
+                throw err;
+            }
+
+            if (err instanceof ServiceProductCategoryError) {
                 failed(res, 500, err.message, err.stack);
                 throw err;
             }

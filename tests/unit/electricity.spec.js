@@ -22,16 +22,6 @@ describe('Electricity Service', () => {
         done();
     })
 
-    it('should throw error when request mode is not options', async (done) => {
-        try {
-            await baseService.buyElectricityService({data: invalidData, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
-            done();
-        } catch (error) {
-            expect(error instanceof InvalidRequestModeError).toBe(true);
-            done();
-        }
-    });
-
     it('should throw error if biller id is not provided', async (done) => {
         const requestPayload = Object.assign({}, invalidData);
         requestPayload.auth.route_mode = 'transact';
