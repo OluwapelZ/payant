@@ -59,4 +59,8 @@ const camelCaseObjectMap = (modelObject, mapFn) => {
     }, {});
 };
 
-module.exports = { generateOTP, generateRandomReference, hashPhoneNumber, snakeCaseObjectMap, camelCaseObjectMap, now };
+function matchString(onsiteString, remoteString) {
+    return (onsiteString === remoteString) ? true : false;
+}
+
+module.exports = { generateOTP, generateRandomReference, hashPhoneNumber, snakeCaseObjectMap, camelCaseObjectMap, now, matchString };
