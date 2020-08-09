@@ -8,6 +8,16 @@ const { authenticate } = require('../utils/third_party_api_call');
 async function authenticatePayantUser(req, res, next) {
     try {
         const requestPayload = decryptData(req.body.data);
+        req.body.data = requestPayload;
+        
+        if (!CONSTANTS.MOCK_MODES.ALL.includes(requestPayload.transaction.mock_mode)) {
+            logger.error('Mock mode must be provided for any request to payant: [inspect or live]');
+            return failed(res, 401, ResponseMessages.INVALID_MOCK_MODE_ERROR);
+        }
+
+        if (requestPayload.transaction.mock_mode == CONSTANTS.MOCK_MODES.INSPECT && requestPayload.auth.route_mode != CONSTANTS.REQUEST_TYPES.QUERY) {
+            next();
+        }
 
         // Exclude otp validation request from payant authentication.
         if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.VALIDATE) {
@@ -24,7 +34,6 @@ async function authenticatePayantUser(req, res, next) {
             return failed(res, 401, ResponseMessages.AUTHENICATION_FAILED);
         }
 
-        req.body.data = requestPayload;
         req.body.token = authResponse.token;
         next();
     } catch (err) {

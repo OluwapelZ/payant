@@ -36,16 +36,32 @@ function mapWaitingForOTP(message, reference) {
     }
 }
 
-function mapServiceProducts(rawData, orderReference, transactionRef) {
+function mapServiceProducts(rawData, orderReference, transactionRef, isMock=false) {
     return {
         provider_response_code: '00',
         provider: config.provider_name,
         errors: null,
         error: null,
         provider_response: {
-            products: mapProducts(rawData, orderReference),
+            products: isMock ? [
+                {
+                    order_reference: "orderReference",
+                    biller_item_id: "productsData._id",
+                    biller_item_code: "element.bundleCode",
+                    biller_item_name: "element.name",
+                    biller_item_description: '',
+                    biller_item_image_url: '',
+                    biller_item_prompt: '',
+                    customer_name: '',
+                    biller_item_meta: {},
+                    currency: '566',
+                    amount: "element.amount",
+                    terms: null,
+                    terms_url: null,
+                },
+            ] : mapProducts(rawData, orderReference),
         },
-        reference: transactionRef,
+        reference: isMock ? "mockReference" : transactionRef,
         meta: {}
     };
 }
@@ -92,7 +108,7 @@ function mapTransactionDetails(reqRef, transactionRef, request, response, mapped
     }
 }
 
-function mapAirtimeResponse(responsePayload, amount, orderRef) {
+function mapAirtimeResponse(responsePayload, amount, orderRef, isMock=false) {
     return {
         provider_response_code: "00",
         provider: config.provider_name,
@@ -101,16 +117,16 @@ function mapAirtimeResponse(responsePayload, amount, orderRef) {
         provider_response: {
             payment_status: "Successful",
             fulfillment_status: "Processing",
-            transaction_final_amount: (Number(amount) * 100), //In kobo
+            transaction_final_amount: (isMock) ? "0.00" : (Number(amount) * 100), //In kobo
             transaction_fee: "0.00",
-            narration: (responsePayload.text) ? responsePayload.text : "",
-            reference: orderRef,
+            narration: (isMock) ? " " : (responsePayload.text) ? responsePayload.text : "",
+            reference: isMock ? "mockReference" : orderRef,
             "meta":{}
         }
     };
 }
 
-function mapDataResponse(responsePayload, amount, orderRef) {
+function mapDataResponse(responsePayload, amount, orderRef, isMock=false) {
     return {
         provider_response_code: "00",
         provider: config.provider_name,
@@ -119,102 +135,102 @@ function mapDataResponse(responsePayload, amount, orderRef) {
         provider_response: {
             payment_status: "Successful",
             fulfillment_status: "Processing",
-            transaction_final_amount: (Number(amount) * 100), //In kobo
+            transaction_final_amount: (isMock) ? "0.00" : (Number(amount) * 100), //In kobo
             transaction_fee: "0.00",
-            narration: (responsePayload.text) ? responsePayload.text : "",
-            reference: orderRef,
+            narration: (isMock) ? " " : (responsePayload.text) ? responsePayload.text : "",
+            reference: isMock ? "mockReference" : orderRef,
             "meta":{}
         }
     };
 }
 
-function mapElectricityResponse(responsePayload) {
+function mapElectricityResponse(responsePayload, isMock=false) {
     return {
         provider_response_code: "00",
         provider: config.provider_name,
         errors: null,
         error: null,
         provider_response: {
-        reference: generateRandomReference(),
+        reference: isMock ? "mockReference" : generateRandomReference(),
         payment_status: "Successful",
         fulfillment_status: "Succesful",
-        transaction_final_amount: responsePayload.amount,//in kobo
+        transaction_final_amount: isMock ? "0000000" : responsePayload.amount,//in kobo
         transaction_fee: 0.00,
-        pin_code: responsePayload.pin.pinCode,
-        pin_serial_number: responsePayload.pin.serialNumber,
+        pin_code: isMock ? "1234" : responsePayload.pin.pinCode,
+        pin_serial_number: isMock ? "1234ABC" : responsePayload.pin.serialNumber,
         narration: "Electricity subscription was successful"
         }
     };
 }
 
-function mapTvResponse(requestPayload, responsePayload) {
+function mapTvResponse(requestPayload, responsePayload, isMock=false) {
     return {
         provider_response_code: "00",
         provider: config.provider_name,
         errors: null,
         error: null,
         provider_response: {
-            reference: requestPayload.transaction.transaction_ref,
-            payment_status: responsePayload.transaction.status,
-            fulfillment_status: responsePayload.status,
-            transaction_final_amount: responsePayload.transaction.amount,
+            reference: isMock ? "mockReference" : requestPayload.transaction.transaction_ref,
+            payment_status: isMock ? "mockPaymentStatus" : responsePayload.transaction.status,
+            fulfillment_status: isMock ? "mockFulfillmentStatus" : responsePayload.status,
+            transaction_final_amount: isMock ? "0000000" : responsePayload.transaction.amount,
             transaction_fee: 0,
             narration: ""
         }
     };
 }
 
-function mapScratchCardResponse(responsePayload, orderReference) {
+function mapScratchCardResponse(responsePayload, orderReference, isMock=false) {
     return {
         provider_response_code: "00",
         provider: config.provider_name,
         errors: null,
         error: null,
         provider_response: {
-            scratch_card_number: responsePayload.pin.serialNumber,
-            sratch_card_pin: responsePayload.pin.pinCode,
-            scratch_card_serial: responsePayload.pin.serialNumber,
+            scratch_card_number: isMock ? "mock card number" : responsePayload.pin.serialNumber,
+            sratch_card_pin: isMock ? "mock card pin" : responsePayload.pin.pinCode,
+            scratch_card_serial: isMock ? "mock scratch serial number" : responsePayload.pin.serialNumber,
             payment_status: "Successful",
             fulfillment_status: "Succesful",
-            transaction_final_amount: responsePayload.amount,
+            transaction_final_amount: isMock ? "000000000" : responsePayload.amount,
             transaction_fee: 0,
             narration: "Waec Scratch card purchase was successful",
-            reference: orderReference,
+            reference: isMock ? "mockReference" : orderReference,
         }
     };
 }
 
-function mapMinNinResponse(identityResponse, orderReference, transactionRequestPayload) {
+function mapMinNinResponse(identityResponse, orderReference, transactionRequestPayload, isMock=false) {
     return {
         provider_response_code: "00",
         provider: config.provider_name,
         errors: null,
         error: null,
         provider_response: {
-            nin: identityResponse.data.nin,
-            first_name: matchString(transactionRequestPayload.customer.firstname, identityResponse.data.firstname),
-            middle_name: matchString(transactionRequestPayload.details.middle_name, identityResponse.data.middlename),
-            last_name: matchString(transactionRequestPayload.customer.lastname, identityResponse.data.surname),
-            dob: matchString(transactionRequestPayload.details.dob, identityResponse.data.birthdate),
-            reference: orderReference,
+            nin: isMock ? "123456789" : identityResponse.data.nin,
+            first_name: isMock ? true : matchString(transactionRequestPayload.customer.firstname, identityResponse.data.firstname),
+            middle_name: isMock ? true : matchString(transactionRequestPayload.details.middle_name, identityResponse.data.middlename),
+            last_name: isMock ? true : matchString(transactionRequestPayload.customer.lastname, identityResponse.data.surname),
+            dob: isMock ? true : matchString(transactionRequestPayload.details.dob, identityResponse.data.birthdate),
+            reference: isMock ? "mockReference" : orderReference,
             meta: {}
         }
     };
 }
 
-function mapMidNinResponse(identityResponse, orderReference) {
+function mapMidNinResponse(identityResponse, orderReference, isMock=false) {
     return {
         provider_response_code: "00",
         provider: config.provider_name,
         errors: null,
         error: null,
         provider_response: {
-            nin: identityResponse.data.nin,
-            first_name: identityResponse.data.firstname,
-            middle_name: identityResponse.data.middlename,
-            last_name: identityResponse.data.surname,
-            dob: identityResponse.data.birthdate,
-            phone_number1: identityResponse.data.telephoneno,
+            nin: isMock ? "123456789" : identityResponse.data.nin,
+            first_name: isMock ? "Luther" : identityResponse.data.firstname,
+            middle_name:  isMock ? "King" : identityResponse.data.middlename,
+            last_name: isMock ? "Martin" : identityResponse.data.surname,
+            dob: isMock ? "25AD" : identityResponse.data.birthdate,
+            phone_number1: isMock ? "+2340000000000" : identityResponse.data.telephoneno,
             phone_number2: "",
             reference: orderReference,
             meta: {}
