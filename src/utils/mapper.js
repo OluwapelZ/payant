@@ -1,6 +1,6 @@
 const CONSTANTS = require('../constants/constant');
 const config = require('../config/config');
-const { generateRandomReference, now } = require('../utils/util');
+const { generateRandomReference, now, matchString } = require('../utils/util');
 
 function mapErrorResponse(message, stack) {
     return {
@@ -181,7 +181,7 @@ function mapScratchCardResponse(responsePayload, orderReference) {
     };
 }
 
-function mapMinNinResponse(identityResponse, orderReference) {
+function mapMinNinResponse(identityResponse, orderReference, transactionRequestPayload) {
     return {
         provider_response_code: "00",
         provider: config.provider_name,
@@ -189,10 +189,10 @@ function mapMinNinResponse(identityResponse, orderReference) {
         error: null,
         provider_response: {
             nin: identityResponse.data.nin,
-            first_name: identityResponse.data.firstname,
-            middle_name: identityResponse.data.middlename,
-            last_name: identityResponse.data.surname,
-            dob: identityResponse.data.birthdate,
+            first_name: matchString(transactionRequestPayload.customer.firstname, identityResponse.data.firstname),
+            middle_name: matchString(transactionRequestPayload.details.middle_name, identityResponse.data.middlename),
+            last_name: matchString(transactionRequestPayload.customer.lastname, identityResponse.data.surname),
+            dob: matchString(transactionRequestPayload.details.dob, identityResponse.data.birthdate),
             reference: orderReference,
             meta: {}
         }

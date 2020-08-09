@@ -502,13 +502,13 @@ class BaseService {
         }
 
         if ((requestPayload.transaction.details && requestPayload.transaction.details.otp_override == true) || (requestPayload.transaction.app_info && requestPayload.transaction.app_info.extras && requestPayload.transaction.app_info.extras.otp_override == true)) {
-            const transactionDetails = mapTransactionDetails(requestPayload.request_ref, requestPayload.transaction.transaction_ref, requestPayload, identityResponse, mapMinNinResponse(identityResponse, orderReference), CONSTANTS.REQUEST_TYPES.TRANSACT, orderReference, true, null);
+            const transactionDetails = mapTransactionDetails(requestPayload.request_ref, requestPayload.transaction.transaction_ref, requestPayload, identityResponse, mapMinNinResponse(identityResponse, orderReference, requestPayload.transaction), CONSTANTS.REQUEST_TYPES.TRANSACT, orderReference, true, null);
             await new Transaction().createTransaction(transactionDetails);
-            return mapMinNinResponse(identityResponse);
+            return mapMinNinResponse(identityResponse, orderReference, requestPayload.transaction);
         }
 
         const otp = generateOTP();
-        const transactionDetails = mapTransactionDetails(requestPayload.request_ref, requestPayload.transaction.transaction_ref, requestPayload, identityResponse, mapMinNinResponse(identityResponse, orderReference), CONSTANTS.REQUEST_TYPES.TRANSACT, orderReference, true, otp);
+        const transactionDetails = mapTransactionDetails(requestPayload.request_ref, requestPayload.transaction.transaction_ref, requestPayload, identityResponse, mapMinNinResponse(identityResponse, orderReference, requestPayload.transaction), CONSTANTS.REQUEST_TYPES.TRANSACT, orderReference, true, otp);
         await new Transaction().createTransaction(transactionDetails);
 
         const smsData = {
