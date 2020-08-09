@@ -1,4 +1,9 @@
 const CONSTANTS = {
+    MOCK_MODES: {
+        ALL: ['inspect', 'live'],
+        INSPECT: 'inspect',
+        LIVE: 'live'
+    },
     REQUEST_STATUSES: {
         SUCCESSFUL: 'Successful',
         FAILED: 'Error',
