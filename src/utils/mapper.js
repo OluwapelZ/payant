@@ -10,7 +10,10 @@ function mapErrorResponse(message, stack) {
             provider_response_code: null,
             provider: config.provider_name,
             errors: stack,
-            error: message,
+            error: {
+                code: "01",
+                message: message
+            },
             provider_response: {
                 reference: generateRandomReference()
             },
