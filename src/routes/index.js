@@ -17,8 +17,8 @@ router.get('/health', function(req, res, next) {
 router.post('/buy_airtime', authMiddleware.authenticatePayantUser, baseController.buyAirtime);
 router.post('/buy_data', authMiddleware.authenticatePayantUser, baseController.buyData);
 router.post('/buy_scratch_card', authMiddleware.authenticatePayantUser, baseController.buyScratchCard);
-router.post('/look_up_nin_min', authMiddleware.authenticatePayantUser, baseController.lookupNinMin);
-router.post('/look_up_nin_mid', authMiddleware.authenticatePayantUser, baseController.lookupNinMid);
+router.post('/look_up_nin_min', baseController.lookupNinMin);
+router.post('/look_up_nin_mid', baseController.lookupNinMid);
 router.post('/pay_tv', authMiddleware.authenticatePayantUser, baseController.payTv);
 router.post('/pay_electricity', authMiddleware.authenticatePayantUser, baseController.payElectricity);
 
