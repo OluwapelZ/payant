@@ -8,4 +8,5 @@ module.exports = {
     NO_AUTH_DETAILS_PROVIDED: 'Authentication Failed - No Authentication details was provided',
     PROVIDER_ERROR_RESPONSE: 'Failed Request from Provider. Internal internal error response. lol',
     SUCCESSFULLY_SENT_OTP: 'Please enter the OTP sent to',
+    INVALID_MOCK_MODE_ERROR: 'Mock mode must be provided for any request to payant: [inspect or live]',
 };
