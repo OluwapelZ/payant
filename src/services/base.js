@@ -524,7 +524,7 @@ class BaseService {
     async lookupNinMinService(request) {
         const requestPayload = decryptData(request.data);
         const orderReference = generateRandomReference();
-        const isOtpOverrife = (requestPayload.transaction.details.otp_override == true || (requestPayload.transaction.app_info && requestPayload.transaction.app_info.extras && requestPayload.transaction.app_info.extras.otp_override == true)) ? true : false
+        const isOtpOverrife = (requestPayload.transaction.app_info.extras.otp_override == true || (requestPayload.transaction.app_info && requestPayload.transaction.app_info.extras && requestPayload.transaction.app_info.extras.otp_override == true)) ? true : false
 
         if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.request_mode)) {
             logger.error('Request mode was not provided');
@@ -540,9 +540,9 @@ class BaseService {
         }
 
         if ((requestPayload.transaction.mock_mode).toLowerCase() == CONSTANTS.MOCK_MODES.INSPECT) {
-            if (!requestPayload.transaction.details || !requestPayload.request_type || !requestPayload.transaction.customer.customer_ref || !requestPayload.transaction.customer.firstname || !requestPayload.transaction.customer.surname) {
-                logger.error('Incomplete options request - Required parameters: [request_type, customer_ref, amount, firstname, lastname]');
-                throw new InvalidParamsError('Incomplete options request - Required parameters: [request_type, customer_ref, amount, firstname, lastname]');
+            if (!requestPayload.auth.secure || !requestPayload.transaction.details || !requestPayload.request_type || !requestPayload.transaction.customer.customer_ref || !requestPayload.transaction.customer.firstname || !requestPayload.transaction.customer.surname) {
+                logger.error('Incomplete options request - Required parameters: [auth.secure, request_type, customer_ref, amount, firstname, lastname]');
+                throw new InvalidParamsError('Incomplete options request - Required parameters: [auth.secure, request_type, customer_ref, amount, firstname, lastname]');
             } else {
                 return {
                     serviceResponse: mapMinNinResponse(null, null, null, true),
@@ -551,16 +551,20 @@ class BaseService {
                 };
             }
         }
-
-        if (!requestPayload.transaction.customer.customer_ref) {
-            logger.error(`Missing parameter customer_ref [nin min]`);
-            throw new InvalidParamsError(`Missing parameter customer_ref [nin min]`);
+        if (!requestPayload.auth.secure) {
+            logger.error(`Missing parameter [nin number]`);
+            throw new InvalidParamsError(`Missing parameter [nin number]`);
+        }
+        if (!requestPayload.transaction.app_info.extras.secret_key) {
+            logger.error(`Missing parameter [Payant's Secret Key in transaction.app_info.extras.secret_key]`);
+            throw new InvalidParamsError(`Payant's Secret Key in transaction.app_info.extras.secret_key`);
         }
 
         const postDetails = {
             method: 'SMS',
             type: 'NIN',
-            number: requestPayload.transaction.customer.customer_ref
+            number: requestPayload.auth.secure,
+            secretKey: requestPayload.transaction.app_info.extras.secret_key
         };
         const identityResponse = await payantIdentityApiCall(postDetails);
 
@@ -569,12 +573,13 @@ class BaseService {
             throw new CustomerVerificationError(`Identity pull request failed`);
         }
 
-        if ((requestPayload.transaction.details && requestPayload.transaction.details.otp_override == true) || (requestPayload.transaction.app_info && requestPayload.transaction.app_info.extras && requestPayload.transaction.app_info.extras.otp_override == true)) {
+        if (( requestPayload.transaction.app_info.extras && requestPayload.transaction.app_info.extras.otp_override == true)) {
             const transactionDetails = mapTransactionDetails(requestPayload.request_ref, requestPayload.transaction.transaction_ref, requestPayload, identityResponse, mapMinNinResponse(identityResponse, orderReference, requestPayload.transaction), CONSTANTS.REQUEST_TYPES.TRANSACT, orderReference, true, null);
             await new Transaction().createTransaction(transactionDetails);
             return mapMinNinResponse(identityResponse, orderReference, requestPayload.transaction);
         }
 
+        
         const otp = generateOTP();
         const transactionDetails = mapTransactionDetails(requestPayload.request_ref, requestPayload.transaction.transaction_ref, requestPayload, identityResponse, mapMinNinResponse(identityResponse, orderReference, requestPayload.transaction), CONSTANTS.REQUEST_TYPES.TRANSACT, orderReference, true, otp);
         await new Transaction().createTransaction(transactionDetails);
@@ -611,8 +616,8 @@ class BaseService {
         }
 
         if ((requestPayload.transaction.mock_mode).toLowerCase() == CONSTANTS.MOCK_MODES.INSPECT) {
-            if (!requestPayload.transaction.details || !requestPayload.request_type || !requestPayload.transaction.customer.customer_ref || !requestPayload.transaction.customer.firstname || !requestPayload.transaction.customer.surname) {
-                logger.error('Incomplete options request - Required parameters: [request_type, customer_ref, amount, firstname, lastname]');
+            if (!requestPayload.auth.secure || !requestPayload.transaction.details || !requestPayload.request_type || !requestPayload.transaction.customer.customer_ref || !requestPayload.transaction.customer.firstname || !requestPayload.transaction.customer.surname) {
+                logger.error('Incomplete options request - Required parameters: [auth.secure, request_type, customer_ref, amount, firstname, lastname]');
                 throw new InvalidParamsError('Incomplete options request - Required parameters: [request_type, customer_ref, amount, firstname, lastname]');
             } else {
                 return {
@@ -621,16 +626,22 @@ class BaseService {
                 };
             }
         }
+    
         
-        if (!requestPayload.transaction.customer.customer_ref) {
-            logger.error(`Missing parameter customer_ref [nin mid]`);
-            throw new InvalidParamsError(`Missing parameter customer_ref [nin mid]`);
+        if (!requestPayload.auth.secure) {
+            logger.error(`Missing parameter [nin number]`);
+            throw new InvalidParamsError(`Missing parameter [nin number]`);
+        }
+        if (!requestPayload.transaction.app_info.extras.secret_key) {
+            logger.error(`Missing parameter [Payant's Secret Key in transaction.app_info.extras.secret_key]`);
+            throw new InvalidParamsError(`Payant's Secret Key in transaction.app_info.extras.secret_key`);
         }
 
         const postDetails = {
             method: 'SMS',
             type: 'NIN',
-            number: requestPayload.transaction.customer.customer_ref
+            number: requestPayload.auth.secure,
+            secretKey: requestPayload.transaction.app_info.extras.secret_key
         };
         const identityResponse = await payantIdentityApiCall(postDetails);
 
@@ -639,7 +650,7 @@ class BaseService {
             throw new CustomerVerificationError(`Identity pull request failed`);
         }
 
-        if ((requestPayload.transaction.details && requestPayload.transaction.details.otp_override == true) || (requestPayload.transaction.app_info && requestPayload.transaction.app_info.extras && requestPayload.transaction.app_info.extras.otp_override == true)) {
+        if (( requestPayload.transaction.app_info.extras && requestPayload.transaction.app_info.extras.otp_override == true)) {
             const transactionDetails = mapTransactionDetails(requestPayload.request_ref, requestPayload.transaction.transaction_ref, requestPayload, identityResponse, mapMidNinResponse(identityResponse, orderReference), CONSTANTS.REQUEST_TYPES.TRANSACT, orderReference, true, null);
             await this.storeTransaction(transactionDetails);
             return mapMidNinResponse(identityResponse);
