@@ -30,13 +30,13 @@ class BaseService {
         const transaction = null;
 
         if (!CONSTANTS.AVAILABLE_SERVICES.includes(requestPayload.request_type)) {
-        logger.error(`Query request was made to a service ${requestPayload.request_type} currently not implemented`);
-        throw new ServiceNotImplementedError(`Service ${requestPayload.request_type} is currently not implemented`);
+            logger.error(`Query request was made to a service ${requestPayload.request_type} currently not implemented`);
+            throw new ServiceNotImplementedError(`Service ${requestPayload.request_type} is currently not implemented`);
         }
 
         if (!requestPayload.transaction || !requestPayload.transaction.transaction_ref) {
-        logger.error('Transaction reference is required for query requests');
-        throw new InvalidRequestModeError('Transaction reference is required for query requests');
+            logger.error('Transaction reference is required for query requests');
+            throw new InvalidRequestModeError('Transaction reference is required for query requests');
         }
 
         switch(requestPayload.request_type) {
@@ -81,14 +81,22 @@ class BaseService {
             throw new InvalidRequestModeError('Request mode has to be passed as options to make an option call');
         }
 
+        if (request.transaction.mock_mode == CONSTANTS.MOCK_MODES.INSPECT) {
+            if (!request.transaction.details || !request.transaction.details.biller_id || !request.request_type || !request.transaction.customer.customer_ref) {
+                logger.error('Incomplete options request - Required parameters: [biller_id, request_type, customer_ref]');
+                throw new InvalidParamsError('Incomplete options request - Required parameters: [biller_id, request_type, customer_ref]');
+            } else {
+                return mapServiceProducts(null, null, null, true);
+            }
+        }
+
         if (!request.transaction.details || !request.transaction.details.biller_id) {
             logger.error('Product biller id has to be passed in the details object [nested in transaction object]');
             throw new BillerProductError('Product biller id has to be passed in details object [nested in transaction object]');
         }
 
-        const parsedRequestType = request.request_type.replace(" ", "_");
-       
-        const billerId = config.service_biller_ids[`${parsedRequestType}`][`${request.transaction.details.biller_id}`];
+        const billerId = config.service_biller_ids[`${request.request_type}`][`${request.transaction.details.biller_id}`];
+
         if (!billerId) {
             logger.error(`Provider does not support "${request.transaction.details.biller_id}" biller`);
             throw new BillerNotSupportedError(`Provider does not support "${request.transaction.details.biller_id}" biller`);
@@ -138,6 +146,15 @@ class BaseService {
 
         if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.OPTIONS) {
             return await this.listProviderServices(requestPayload, token);
+        }
+
+        if (request.transaction.mock_mode == CONSTANTS.MOCK_MODES.INSPECT) {
+            if (!request.transaction.details || !request.transaction.details.order_reference || !request.transaction.details.telco_code || !request.request_type || !request.transaction.customer.customer_ref || !request.transaction.amount) {
+                logger.error('Incomplete options request - Required parameters: [order_reference, telco_code, request_type, customer_ref, amount]');
+                throw new InvalidParamsError('Incomplete options request - Required parameters: [order_reference, telco_code, request_type, customer_ref, amount]');
+            } else {
+                return mapAirtimeResponse(null, null, null, true);
+            }
         }
 
         if (requestPayload.request_type != CONSTANTS.REQUEST_TYPES.BUY_AIRTIME) {
@@ -212,6 +229,15 @@ class BaseService {
 
         if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.OPTIONS) {
             return await this.listProviderServices(requestPayload, token);
+        }
+
+        if (request.transaction.mock_mode == CONSTANTS.MOCK_MODES.INSPECT) {
+            if (!request.transaction.details || !request.transaction.details.order_reference || !request.transaction.details.biller_id || !request.transaction.details.biller_item_id || !request.request_type || !request.transaction.customer.customer_ref || !request.transaction.amount) {
+                logger.error('Incomplete options request - Required parameters: [order_reference, biller_id, biller_item_id, request_type, customer_ref, amount]');
+                throw new InvalidParamsError('Incomplete options request - Required parameters: [order_reference, biller_id, biller_item_id, request_type, customer_ref, amount]');
+            } else {
+                return mapDataResponse(null, null, null, true);
+            }
         }
 
         if (requestPayload.request_type != CONSTANTS.REQUEST_TYPES.BUY_DATA) {
@@ -290,6 +316,15 @@ class BaseService {
             return await this.listProviderServices(requestPayload, token);
         }
 
+        if (request.transaction.mock_mode == CONSTANTS.MOCK_MODES.INSPECT) {
+            if (!request.transaction.details || !request.transaction.details.order_reference || !request.transaction.details.biller_id || !request.request_type || !request.transaction.customer.customer_ref || !request.transaction.amount) {
+                logger.error('Incomplete options request - Required parameters: [order_reference, biller_id, request_type, customer_ref, amount]');
+                throw new InvalidParamsError('Incomplete options request - Required parameters: [order_reference, biller_id, request_type, customer_ref, amount]');
+            } else {
+                return mapElectricityResponse(null, true);
+            }
+        }
+
         if (requestPayload.request_type != CONSTANTS.REQUEST_TYPES.PAY_ELECTRICITY) {
             logger.error('Request type has be to passed as pay_electricity');
             throw new InvalidParamsError('Request type has be to passed as pay_electricity ');
@@ -357,6 +392,15 @@ class BaseService {
 
         if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.OPTIONS) {
             return await this.listProviderServices(requestPayload, token);
+        }
+
+        if (request.transaction.mock_mode == CONSTANTS.MOCK_MODES.INSPECT) {
+            if (!request.transaction.details || !request.transaction.details.order_reference || !request.transaction.details.biller_id || !request.transaction.details.biller_item_id || !request.request_type || !request.transaction.customer.customer_ref || !request.transaction.amount) {
+                logger.error('Incomplete options request - Required parameters: [order_reference, biller_id, biller_item_id, request_type, customer_ref, amount]');
+                throw new InvalidParamsError('Incomplete options request - Required parameters: [order_reference, biller_id, biller_item_id, request_type, customer_ref, amount]');
+            } else {
+                return mapTvResponse(null, null, true);
+            }
         }
 
         if (requestPayload.request_type != CONSTANTS.REQUEST_TYPES.PAY_TV) {
@@ -427,6 +471,15 @@ class BaseService {
         if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.OPTIONS) {
             return await this.listProviderServices(requestPayload, token);
         }
+
+        if (request.transaction.mock_mode == CONSTANTS.MOCK_MODES.INSPECT) {
+            if (!request.transaction.details || !request.transaction.details.order_reference || !request.transaction.details.biller_id || !request.request_type || !request.transaction.amount) {
+                logger.error('Incomplete options request - Required parameters: [order_reference, biller_id, biller_item_id, request_type, amount]');
+                throw new InvalidParamsError('Incomplete options request - Required parameters: [order_reference, biller_id, biller_item_id, request_type, amount]');
+            } else {
+                return mapScratchCardResponse(null, null, true);
+            }
+        }
         
         if (requestPayload.request_type != CONSTANTS.REQUEST_TYPES.BUY_SCRATCH_CARD) {
             logger.error('Request type has be to passed as buy_scratch_card');
@@ -484,20 +537,25 @@ class BaseService {
         if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.QUERY) {
             return await this.queryTransaction(requestPayload);
         }
-        if (!requestPayload.auth.secure) {
-            logger.error(`Missing NIN in auth secure [nin mid]`);
-            throw new InvalidParamsError(`Missing parameter NIN in auth secure [nin mid]`);
+
+        if (request.transaction.mock_mode == CONSTANTS.MOCK_MODES.INSPECT) {
+            if (!request.transaction.details || !request.request_type || !request.transaction.customer.customer_ref || !request.transaction.customer.firstname || !request.transaction.customer.lastname) {
+                logger.error('Incomplete options request - Required parameters: [request_type, customer_ref, amount, firstname, lastname]');
+                throw new InvalidParamsError('Incomplete options request - Required parameters: [request_type, customer_ref, amount, firstname, lastname]');
+            } else {
+                return mapMinNinResponse(null, null, null, true);
+            }
         }
-        if (!requestPayload.transaction.app_info.extras["secret_key"]) {
-            logger.error(`Missing parameter secret keyin app extras [nin min]`);
-            throw new InvalidParamsError(`Missing parameter secret keyin app extras [nin min]`);
+
+        if (!requestPayload.transaction.customer.customer_ref) {
+            logger.error(`Missing parameter customer_ref [nin min]`);
+            throw new InvalidParamsError(`Missing parameter customer_ref [nin min]`);
         }
 
         const postDetails = {
             method: 'SMS',
             type: 'NIN',
-            number: requestPayload.auth.secure,
-            secretKey : requestPayload.transaction.app_info.extras["secret_key"]
+            number: requestPayload.transaction.customer.customer_ref
         };
         const identityResponse = await payantIdentityApiCall(postDetails);
 
@@ -545,21 +603,25 @@ class BaseService {
         if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.QUERY) {
             return await this.queryTransaction(requestPayload);
         }
-        
-        if (!requestPayload.auth.secure) {
-            logger.error(`Missing NIN in auth secure [nin mid]`);
-            throw new InvalidParamsError(`Missing parameter NIN in auth secure [nin mid]`);
+
+        if (request.transaction.mock_mode == CONSTANTS.MOCK_MODES.INSPECT) {
+            if (!request.transaction.details || !request.request_type || !request.transaction.customer.customer_ref || !request.transaction.customer.firstname || !request.transaction.customer.lastname) {
+                logger.error('Incomplete options request - Required parameters: [request_type, customer_ref, amount, firstname, lastname]');
+                throw new InvalidParamsError('Incomplete options request - Required parameters: [request_type, customer_ref, amount, firstname, lastname]');
+            } else {
+                return mapMidNinResponse(null, null, true);
+            }
         }
-        if (!requestPayload.transaction.app_info.extras["secret_key"]) {
-            logger.error(`Missing parameter secret keyin app extras [nin mid]`);
-            throw new InvalidParamsError(`Missing parameter secret keyin app extras [nin mid]`);
+        
+        if (!requestPayload.transaction.customer.customer_ref) {
+            logger.error(`Missing parameter customer_ref [nin mid]`);
+            throw new InvalidParamsError(`Missing parameter customer_ref [nin mid]`);
         }
 
         const postDetails = {
             method: 'SMS',
             type: 'NIN',
-            number: requestPayload.auth.secure,
-            secretKey : requestPayload.transaction.app_info.extras["secret_key"]
+            number: requestPayload.transaction.customer.customer_ref
         };
         const identityResponse = await payantIdentityApiCall(postDetails);
 
