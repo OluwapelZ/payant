@@ -109,7 +109,6 @@ class BaseService {
 
         const services = await listServiceProductsAPI(token, billerId, (request.transaction.customer.customer_ref) ? request.transaction.customer.customer_ref : null);
 
-        console.log(services);
         if (services.status == CONSTANTS.PAYANT_STATUS_TYPES.error) {
             logger.error(`An error occured on attempt to fetch "${request.request_type}" service products: ${services.message}`);
             throw new ServiceProductCategoryError(`An error occured on attempt to fetch "${request.request_type}" service products`);

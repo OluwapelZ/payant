@@ -142,7 +142,6 @@ function sendOTP(smsDetails) {
     return axios.post(config.one_pipe_sms_url, smsDetails, requestHeaders)
     .then(response => response.data)
     .catch(function (error) {
-        console.log(errror);
         throw error;
     })
 }
