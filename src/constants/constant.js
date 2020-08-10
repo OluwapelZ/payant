@@ -6,7 +6,7 @@ const CONSTANTS = {
     },
     REQUEST_STATUSES: {
         SUCCESSFUL: 'Successful',
-        FAILED: 'Error',
+        FAILED: 'Failed',
         WAITING_FOR_OTP: 'WaitingForOTP',
         OPTIONS_DELIVERED: 'OptionsDelivered',
     },

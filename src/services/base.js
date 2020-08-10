@@ -525,7 +525,8 @@ class BaseService {
         const requestPayload = request.data;
         const orderReference = generateRandomReference();
 
-        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.auth.route_mode)) {
+    
+        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.route_mode)) {
             logger.error('Request mode was not provided');
             throw new InvalidRequestModeError('Request mode was not provided');
         }
