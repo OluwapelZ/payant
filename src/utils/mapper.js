@@ -2,14 +2,19 @@ const CONSTANTS = require('../constants/constant');
 const config = require('../config/config');
 const { generateRandomReference, now, matchString } = require('../utils/util');
 
-function mapErrorResponse(message, stack) {
+function mapErrorResponse(message) {
     return {
         status: CONSTANTS.REQUEST_STATUSES.FAILED,
         message: message,
         data: {
             provider_response_code: null,
             provider: config.provider_name,
-            errors: stack,
+            errors: [
+                {
+                    code: "01",
+                    message: message
+                }
+            ],
             error: {
                 code: "01",
                 message: message

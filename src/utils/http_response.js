@@ -12,8 +12,8 @@ function optionsSuccess(res, statusCode, data=null) {
     res.status(statusCode).send({data: encrypt(config.crypt_key, JSON.stringify( {status: CONSTANTS.REQUEST_STATUSES.OPTIONS_DELIVERED, message: ResponseMessages.TRANSACTION_SUCCESSFUL, data: data}))});
 }
 
-function failed(res, statusCode, message, stack=null) {
-    res.status(statusCode).send({data: encrypt(config.crypt_key, JSON.stringify(mapErrorResponse(message, stack)))});
+function failed(res, statusCode, message) {
+    res.status(statusCode).send({data: encrypt(config.crypt_key, JSON.stringify(mapErrorResponse(message)))});
 };
 
 function waitingForOTP(res, statusCode, data) {
