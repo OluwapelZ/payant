@@ -76,12 +76,12 @@ class BaseService {
     }
 
     async listProviderServices(request, token) {
-        if (request.auth.route_mode != CONSTANTS.REQUEST_TYPES.OPTIONS) {
+        if (request.request_mode != CONSTANTS.REQUEST_TYPES.OPTIONS) {
             logger.error('Request mode has to be passed as options to make an option call');
             throw new InvalidRequestModeError('Request mode has to be passed as options to make an option call');
         }
 
-        if (request.transaction.mock_mode == CONSTANTS.MOCK_MODES.INSPECT) {
+        if ((request.transaction.mock_mode).toLowerCase() == CONSTANTS.MOCK_MODES.INSPECT) {
             if (!request.transaction.details || !request.transaction.details.biller_id || !request.request_type || !request.transaction.customer.customer_ref) {
                 logger.error('Incomplete options request - Required parameters: [biller_id, request_type, customer_ref]');
                 throw new InvalidParamsError('Incomplete options request - Required parameters: [biller_id, request_type, customer_ref]');
@@ -135,7 +135,7 @@ class BaseService {
         const requestPayload = request.data;
         const token = request.token;
 
-        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.auth.route_mode)) {
+        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.request_mode)) {
             logger.error('Request mode was not provided');
             throw new InvalidRequestModeError('Request mode was not provided');
         }
@@ -148,8 +148,8 @@ class BaseService {
             return await this.listProviderServices(requestPayload, token);
         }
 
-        if (request.transaction.mock_mode == CONSTANTS.MOCK_MODES.INSPECT) {
-            if (!request.transaction.details || !request.transaction.details.order_reference || !request.transaction.details.telco_code || !request.request_type || !request.transaction.customer.customer_ref || !request.transaction.amount) {
+        if (((requestPayload.transaction.mock_mode).toLowerCase()).toLowerCase() == CONSTANTS.MOCK_MODES.INSPECT) {
+            if (!requestPayload.transaction.details || !requestPayload.transaction.details.order_reference || !requestPayload.transaction.details.telco_code || !requestPayload.request_type || !requestPayload.transaction.customer.customer_ref || !requestPayload.transaction.amount) {
                 logger.error('Incomplete options request - Required parameters: [order_reference, telco_code, request_type, customer_ref, amount]');
                 throw new InvalidParamsError('Incomplete options request - Required parameters: [order_reference, telco_code, request_type, customer_ref, amount]');
             } else {
@@ -218,7 +218,7 @@ class BaseService {
         const requestPayload = request.data;
         const token = request.token;
 
-        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.auth.route_mode)) {
+        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.request_mode)) {
             logger.error('Request mode was not provided');
             throw new InvalidRequestModeError('Request mode was not provided');
         }
@@ -231,8 +231,8 @@ class BaseService {
             return await this.listProviderServices(requestPayload, token);
         }
 
-        if (request.transaction.mock_mode == CONSTANTS.MOCK_MODES.INSPECT) {
-            if (!request.transaction.details || !request.transaction.details.order_reference || !request.transaction.details.biller_id || !request.transaction.details.biller_item_id || !request.request_type || !request.transaction.customer.customer_ref || !request.transaction.amount) {
+        if ((requestPayload.transaction.mock_mode).toLowerCase() == CONSTANTS.MOCK_MODES.INSPECT) {
+            if (!requestPayload.transaction.details || !requestPayload.transaction.details.order_reference || !requestPayload.transaction.details.biller_id || !requestPayload.transaction.details.biller_item_id || !requestPayload.request_type || !requestPayload.transaction.customer.customer_ref || !requestPayload.transaction.amount) {
                 logger.error('Incomplete options request - Required parameters: [order_reference, biller_id, biller_item_id, request_type, customer_ref, amount]');
                 throw new InvalidParamsError('Incomplete options request - Required parameters: [order_reference, biller_id, biller_item_id, request_type, customer_ref, amount]');
             } else {
@@ -303,7 +303,7 @@ class BaseService {
         const requestPayload = request.data;
         const token = request.token;
 
-        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.auth.route_mode)) {
+        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.request_mode)) {
             logger.error('Request mode was not provided');
             throw new InvalidRequestModeError('Request mode was not provided');
         }
@@ -316,8 +316,8 @@ class BaseService {
             return await this.listProviderServices(requestPayload, token);
         }
 
-        if (request.transaction.mock_mode == CONSTANTS.MOCK_MODES.INSPECT) {
-            if (!request.transaction.details || !request.transaction.details.order_reference || !request.transaction.details.biller_id || !request.request_type || !request.transaction.customer.customer_ref || !request.transaction.amount) {
+        if ((requestPayload.transaction.mock_mode).toLowerCase() == CONSTANTS.MOCK_MODES.INSPECT) {
+            if (!requestPayload.transaction.details || !requestPayload.transaction.details.order_reference || !requestPayload.transaction.details.biller_id || !requestPayload.request_type || !requestPayload.transaction.customer.customer_ref || !requestPayload.transaction.amount) {
                 logger.error('Incomplete options request - Required parameters: [order_reference, biller_id, request_type, customer_ref, amount]');
                 throw new InvalidParamsError('Incomplete options request - Required parameters: [order_reference, biller_id, request_type, customer_ref, amount]');
             } else {
@@ -381,7 +381,7 @@ class BaseService {
         const requestPayload = request.data;
         const token = request.token;
 
-        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.auth.route_mode)) {
+        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.request_mode)) {
             logger.error('Request mode was not provided');
             throw new InvalidRequestModeError('Request mode was not provided');
         }
@@ -394,8 +394,8 @@ class BaseService {
             return await this.listProviderServices(requestPayload, token);
         }
 
-        if (request.transaction.mock_mode == CONSTANTS.MOCK_MODES.INSPECT) {
-            if (!request.transaction.details || !request.transaction.details.order_reference || !request.transaction.details.biller_id || !request.transaction.details.biller_item_id || !request.request_type || !request.transaction.customer.customer_ref || !request.transaction.amount) {
+        if ((requestPayload.transaction.mock_mode).toLowerCase() == CONSTANTS.MOCK_MODES.INSPECT) {
+            if (!requestPayload.transaction.details || !requestPayload.transaction.details.order_reference || !requestPayload.transaction.details.biller_id || !requestPayload.transaction.details.biller_item_id || !requestPayload.request_type || !requestPayload.transaction.customer.customer_ref || !requestPayload.transaction.amount) {
                 logger.error('Incomplete options request - Required parameters: [order_reference, biller_id, biller_item_id, request_type, customer_ref, amount]');
                 throw new InvalidParamsError('Incomplete options request - Required parameters: [order_reference, biller_id, biller_item_id, request_type, customer_ref, amount]');
             } else {
@@ -459,7 +459,7 @@ class BaseService {
         const requestPayload = request.data;
         const token = request.token;
 
-        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.auth.route_mode)) {
+        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.request_mode)) {
             logger.error('Request mode was not provided');
             throw new InvalidRequestModeError('Request mode was not provided');
         }
@@ -472,8 +472,8 @@ class BaseService {
             return await this.listProviderServices(requestPayload, token);
         }
 
-        if (request.transaction.mock_mode == CONSTANTS.MOCK_MODES.INSPECT) {
-            if (!request.transaction.details || !request.transaction.details.order_reference || !request.transaction.details.biller_id || !request.request_type || !request.transaction.amount) {
+        if ((requestPayload.transaction.mock_mode).toLowerCase() == CONSTANTS.MOCK_MODES.INSPECT) {
+            if (!requestPayload.transaction.details || !requestPayload.transaction.details.order_reference || !requestPayload.transaction.details.biller_id || !requestPayload.request_type || !requestPayload.transaction.amount) {
                 logger.error('Incomplete options request - Required parameters: [order_reference, biller_id, biller_item_id, request_type, amount]');
                 throw new InvalidParamsError('Incomplete options request - Required parameters: [order_reference, biller_id, biller_item_id, request_type, amount]');
             } else {
@@ -522,11 +522,11 @@ class BaseService {
     }
 
     async lookupNinMinService(request) {
-        const requestPayload = request.data;
+        const requestPayload = decryptData(request.data);
         const orderReference = generateRandomReference();
+        const isOtpOverrife = (requestPayload.transaction.details.otp_override == true || (requestPayload.transaction.app_info && requestPayload.transaction.app_info.extras && requestPayload.transaction.app_info.extras.otp_override == true)) ? true : false
 
-    
-        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.route_mode)) {
+        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.request_mode)) {
             logger.error('Request mode was not provided');
             throw new InvalidRequestModeError('Request mode was not provided');
         }
@@ -539,12 +539,16 @@ class BaseService {
             return await this.queryTransaction(requestPayload);
         }
 
-        if (request.transaction.mock_mode == CONSTANTS.MOCK_MODES.INSPECT) {
-            if (!request.transaction.details || !request.request_type || !request.transaction.customer.customer_ref || !request.transaction.customer.firstname || !request.transaction.customer.lastname) {
+        if ((requestPayload.transaction.mock_mode).toLowerCase() == CONSTANTS.MOCK_MODES.INSPECT) {
+            if (!requestPayload.transaction.details || !requestPayload.request_type || !requestPayload.transaction.customer.customer_ref || !requestPayload.transaction.customer.firstname || !requestPayload.transaction.customer.surname) {
                 logger.error('Incomplete options request - Required parameters: [request_type, customer_ref, amount, firstname, lastname]');
                 throw new InvalidParamsError('Incomplete options request - Required parameters: [request_type, customer_ref, amount, firstname, lastname]');
             } else {
-                return mapMinNinResponse(null, null, null, true);
+                return {
+                    serviceResponse: mapMinNinResponse(null, null, null, true),
+                    isOtpOverride: isOtpOverrife
+
+                };
             }
         }
 
@@ -589,10 +593,11 @@ class BaseService {
     }
 
     async lookupNinMidService(request) {
-        const requestPayload = request.data;
+        const requestPayload = decryptData(request.data);
         const orderReference = generateRandomReference();
+        const isOtpOverrife = (requestPayload.transaction.details.otp_override == true || (requestPayload.transaction.app_info && requestPayload.transaction.app_info.extras && requestPayload.transaction.app_info.extras.otp_override == true)) ? true : false
 
-        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.auth.route_mode)) {
+        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.request_mode)) {
             logger.error('Request mode was not provided');
             throw new InvalidRequestModeError('Request mode was not provided');
         }
@@ -605,12 +610,15 @@ class BaseService {
             return await this.queryTransaction(requestPayload);
         }
 
-        if (request.transaction.mock_mode == CONSTANTS.MOCK_MODES.INSPECT) {
-            if (!request.transaction.details || !request.request_type || !request.transaction.customer.customer_ref || !request.transaction.customer.firstname || !request.transaction.customer.lastname) {
+        if ((requestPayload.transaction.mock_mode).toLowerCase() == CONSTANTS.MOCK_MODES.INSPECT) {
+            if (!requestPayload.transaction.details || !requestPayload.request_type || !requestPayload.transaction.customer.customer_ref || !requestPayload.transaction.customer.firstname || !requestPayload.transaction.customer.surname) {
                 logger.error('Incomplete options request - Required parameters: [request_type, customer_ref, amount, firstname, lastname]');
                 throw new InvalidParamsError('Incomplete options request - Required parameters: [request_type, customer_ref, amount, firstname, lastname]');
             } else {
-                return mapMidNinResponse(null, null, true);
+                return {
+                    serviceResponse: mapMidNinResponse(null, null, true),
+                    isOtpOverride: isOtpOverrife
+                };
             }
         }
         

@@ -41,7 +41,7 @@ function decrypt(sharedKey, cipherText) {
 }
 
 function decryptData(encryptedData) {
-  let rawData = decrypt(config.crypt_key, encryptedData);
+  let rawData = decrypt(config.crypt_key, JSON.stringify(encryptedData));
   let trimmedDated = rawData.split("").filter(function(e) {
       return e != "\u0000";
   });
