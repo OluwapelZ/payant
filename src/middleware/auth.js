@@ -10,12 +10,12 @@ async function authenticatePayantUser(req, res, next) {
         const requestPayload = decryptData(req.body.data);
         req.body.data = requestPayload;
         
-        if (!CONSTANTS.MOCK_MODES.ALL.includes(requestPayload.transaction.mock_mode)) {
+        if (!CONSTANTS.MOCK_MODES.ALL.includes((requestPayload.transaction.mock_mode).toLowerCase())) {
             logger.error('Mock mode must be provided for any request to payant: [inspect or live]');
             return failed(res, 401, ResponseMessages.INVALID_MOCK_MODE_ERROR);
         }
 
-        if (requestPayload.transaction.mock_mode == CONSTANTS.MOCK_MODES.INSPECT && requestPayload.auth.route_mode != CONSTANTS.REQUEST_TYPES.QUERY) {
+        if ((requestPayload.transaction.mock_mode).toLowerCase() == CONSTANTS.MOCK_MODES.INSPECT && requestPayload.auth.route_mode != CONSTANTS.REQUEST_TYPES.QUERY) {
             next();
         }
 

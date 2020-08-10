@@ -220,8 +220,8 @@ class BaseController {
 
     async lookupNinMin(req, res) {
         try {
-            const serviceResponse = await new BaseService().lookupNinMinService(req.body);
-            return (req.body.data.transaction.details.otp_override == true || (req.body.data.transaction.app_info && req.body.data.transaction.app_info.extras && req.body.data.transaction.app_info.extras.otp_override == true)) ?
+            const {serviceResponse, isOtpOverride} = await new BaseService().lookupNinMinService(req.body);
+            return (isOtpOverride) ?
             waitingForOTP(res, CONSTANTS.STATUS_CODES.SUCESS, serviceResponse) :
             success(res, CONSTANTS.STATUS_CODES.SUCCESS, ResponseMessage.TRANSACTION_SUCCESSFUL, serviceResponse);
         } catch (err) {
@@ -263,8 +263,8 @@ class BaseController {
 
     async lookupNinMid(req, res) {
         try {
-            const serviceResponse = await new BaseService().lookupNinMidService(req.body);
-            return (req.body.data.transaction.details.otp_override == true || (req.body.data.transaction.app_info && req.body.data.transaction.app_info.extras && req.body.data.transaction.app_info.extras.otp_override == true)) ?
+            const {serviceResponse, isOtpOverride} = await new BaseService().lookupNinMidService(req.body);
+            return (isOtpOverride) ?
             waitingForOTP(res, CONSTANTS.STATUS_CODES.SUCESS, serviceResponse) :
             success(res, CONSTANTS.STATUS_CODES.SUCCESS, ResponseMessage.TRANSACTION_SUCCESSFUL, serviceResponse);
         } catch (err) {
