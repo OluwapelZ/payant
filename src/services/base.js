@@ -524,11 +524,11 @@ class BaseService {
     async lookupNinMinService(request) {
         const requestPayload = decryptData(request.data);
         const orderReference = generateRandomReference();
-        const isOtpOverrife = (requestPayload.transaction.app_info.extras.otp_override == true || (requestPayload.transaction.app_info && requestPayload.transaction.app_info.extras && requestPayload.transaction.app_info.extras.otp_override == true)) ? true : false
+        const isOtpOverride = (requestPayload.transaction.app_info.extras.otp_override == true || (requestPayload.transaction.app_info && requestPayload.transaction.app_info.extras && requestPayload.transaction.app_info.extras.otp_override == true)) ? true : false;
 
-        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.request_mode)) {
-            logger.error('Request mode was not provided');
-            throw new InvalidRequestModeError('Request mode was not provided');
+        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.auth.route_mode)) {
+            logger.error('Route mode was not provided');
+            throw new InvalidRequestModeError('Route mode was not provided');
         }
 
         if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.VALIDATE) {
@@ -544,10 +544,10 @@ class BaseService {
                 logger.error('Incomplete options request - Required parameters: [auth.secure, request_type, customer_ref, amount, firstname, lastname]');
                 throw new InvalidParamsError('Incomplete options request - Required parameters: [auth.secure, request_type, customer_ref, amount, firstname, lastname]');
             } else {
+                const serviceResponse = mapMinNinResponse(null, null, null, true);
                 return {
-                    serviceResponse: mapMinNinResponse(null, null, null, true),
-                    isOtpOverride: isOtpOverrife
-
+                    ...serviceResponse,
+                    isOtpOverride: isOtpOverride
                 };
             }
         }
@@ -569,20 +569,24 @@ class BaseService {
         const identityResponse = await payantIdentityApiCall(postDetails);
 
         if (identityResponse.status != CONSTANTS.PAYANT_STATUS_TYPES.successful) {
-            logger.error(`Identity pull request failed`);
+            logger.error(`Identity pull request failed: ${identityResponse.message}`);
             throw new CustomerVerificationError(`Identity pull request failed`);
         }
 
-        if (( requestPayload.transaction.app_info.extras && requestPayload.transaction.app_info.extras.otp_override == true)) {
+        if (isOtpOverride) {
             const transactionDetails = mapTransactionDetails(requestPayload.request_ref, requestPayload.transaction.transaction_ref, requestPayload, identityResponse, mapMinNinResponse(identityResponse, orderReference, requestPayload.transaction), CONSTANTS.REQUEST_TYPES.TRANSACT, orderReference, true, null);
-            await new Transaction().createTransaction(transactionDetails);
-            return mapMinNinResponse(identityResponse, orderReference, requestPayload.transaction);
+            // await new Transaction().createTransaction(transactionDetails);
+            const serviceResponse = mapMinNinResponse(identityResponse, orderReference, requestPayload.transaction);
+            return {
+                ...serviceResponse,
+                isOtpOverride: isOtpOverride
+            };
         }
 
         
         const otp = generateOTP();
         const transactionDetails = mapTransactionDetails(requestPayload.request_ref, requestPayload.transaction.transaction_ref, requestPayload, identityResponse, mapMinNinResponse(identityResponse, orderReference, requestPayload.transaction), CONSTANTS.REQUEST_TYPES.TRANSACT, orderReference, true, otp);
-        await new Transaction().createTransaction(transactionDetails);
+        // await new Transaction().createTransaction(transactionDetails);
 
         const smsData = {
             senderName: 'OnePipe - Verify OTP',
@@ -593,18 +597,19 @@ class BaseService {
         await sendOTP(smsData);
         return {
             reference: orderReference,
-            message: `${ResponseMessages.SUCCESSFULLY_SENT_OTP} ${hashPhoneNumber(requestPayload.transaction.customer.customer_ref)}`
+            message: `${ResponseMessages.SUCCESSFULLY_SENT_OTP} ${hashPhoneNumber(requestPayload.transaction.customer.mobile_no)}`,
+            isOtpOverride: isOtpOverride
         };
     }
 
     async lookupNinMidService(request) {
         const requestPayload = decryptData(request.data);
         const orderReference = generateRandomReference();
-        const isOtpOverrife = (requestPayload.transaction.details.otp_override == true || (requestPayload.transaction.app_info && requestPayload.transaction.app_info.extras && requestPayload.transaction.app_info.extras.otp_override == true)) ? true : false
+        const isOtpOverride = (requestPayload.transaction.details.otp_override == true || (requestPayload.transaction.app_info && requestPayload.transaction.app_info.extras && requestPayload.transaction.app_info.extras.otp_override == true)) ? true : false;
 
-        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.request_mode)) {
-            logger.error('Request mode was not provided');
-            throw new InvalidRequestModeError('Request mode was not provided');
+        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.auth.route_mode)) {
+            logger.error('Route mode was not provided');
+            throw new InvalidRequestModeError('Route mode was not provided');
         }
 
         if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.VALIDATE) {
@@ -620,9 +625,10 @@ class BaseService {
                 logger.error('Incomplete options request - Required parameters: [auth.secure, request_type, customer_ref, amount, firstname, lastname]');
                 throw new InvalidParamsError('Incomplete options request - Required parameters: [request_type, customer_ref, amount, firstname, lastname]');
             } else {
+                const serviceResponse = mapMidNinResponse(null, null, true);
                 return {
-                    serviceResponse: mapMidNinResponse(null, null, true),
-                    isOtpOverride: isOtpOverrife
+                    ...serviceResponse,
+                    isOtpOverride: isOtpOverride
                 };
             }
         }
@@ -646,14 +652,18 @@ class BaseService {
         const identityResponse = await payantIdentityApiCall(postDetails);
 
         if (identityResponse.status != CONSTANTS.PAYANT_STATUS_TYPES.successful) {
-            logger.error(`Identity pull request failed`);
+            logger.error(`Identity pull request failed: ${identityResponse.message}`);
             throw new CustomerVerificationError(`Identity pull request failed`);
         }
 
-        if (( requestPayload.transaction.app_info.extras && requestPayload.transaction.app_info.extras.otp_override == true)) {
+        if (isOtpOverride) {
             const transactionDetails = mapTransactionDetails(requestPayload.request_ref, requestPayload.transaction.transaction_ref, requestPayload, identityResponse, mapMidNinResponse(identityResponse, orderReference), CONSTANTS.REQUEST_TYPES.TRANSACT, orderReference, true, null);
             await this.storeTransaction(transactionDetails);
-            return mapMidNinResponse(identityResponse);
+            const serviceResponse = mapMidNinResponse(identityResponse);
+            return {
+                ...serviceResponse,
+                isOtpOverride: isOtpOverride
+            };
         }
 
         const otp = generateOTP();
@@ -669,7 +679,8 @@ class BaseService {
         await sendOTP(smsData);
         return {
             reference: orderReference,
-            message: `${ResponseMessages.SUCCESSFULLY_SENT_OTP} ${hashPhoneNumber(requestPayload.transaction.customer.customer_ref)}`
+            message: `${ResponseMessages.SUCCESSFULLY_SENT_OTP} ${hashPhoneNumber(requestPayload.transaction.customer.mobile_no)}`,
+            isOtpOverride: isOtpOverride
         };
     }
 

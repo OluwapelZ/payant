@@ -121,7 +121,10 @@ function apiLogger(logData) {
     requestHeaders.headers['Content-Type'] = 'application/json';
 
     return axios.post(`${config.api_logger_url}`, logData, requestHeaders)
-    .then(response => response.data)
+    .then(response => {
+        logger.info(`Api logger status: ${(response.status == 200) ? 'Successful' : 'Failed'}`);
+        return response.data;
+    })
     .catch(function (err) {
         logger.error(`Error occurred on api log attempt: ${err.message}`);
         throw err;
