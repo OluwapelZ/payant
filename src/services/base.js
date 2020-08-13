@@ -76,7 +76,7 @@ class BaseService {
     }
 
     async listProviderServices(request, token) {
-        if (request.request_mode != CONSTANTS.REQUEST_TYPES.OPTIONS) {
+        if (request.auth.route_mode != CONSTANTS.REQUEST_TYPES.OPTIONS) {
             logger.error('Request mode has to be passed as options to make an option call');
             throw new InvalidRequestModeError('Request mode has to be passed as options to make an option call');
         }
@@ -102,7 +102,7 @@ class BaseService {
             throw new BillerNotSupportedError(`Provider does not support "${request.transaction.details.biller_id}" biller`);
         }
 
-        if (['pay_tv', 'pay_electricity'].includes(request.request_type)) { //verify customer's unique number with biller
+        if (['pay_tv'].includes(request.request_type)) { //verify customer's unique number with biller
             if (!request.transaction.customer.customer_ref) {
                 logger.error(`Missing parameter customer_ref for service "${request.request_type}"`);
                 throw new CustomerVerificationError(`Missing parameter customer_ref for service "${request.request_type}"`);
@@ -135,7 +135,7 @@ class BaseService {
         const requestPayload = request.data;
         const token = request.token;
 
-        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.request_mode)) {
+        if (!CONSTANTS.auth.route_mode.includes(requestPayload.auth.route_mode)) {
             logger.error('Request mode was not provided');
             throw new InvalidRequestModeError('Request mode was not provided');
         }
@@ -218,7 +218,7 @@ class BaseService {
         const requestPayload = request.data;
         const token = request.token;
 
-        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.request_mode)) {
+        if (!CONSTANTS.auth.route_mode.includes(requestPayload.auth.route_mode)) {
             logger.error('Request mode was not provided');
             throw new InvalidRequestModeError('Request mode was not provided');
         }
@@ -303,7 +303,7 @@ class BaseService {
         const requestPayload = request.data;
         const token = request.token;
 
-        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.request_mode)) {
+        if (!CONSTANTS.auth.route_mode.includes(requestPayload.auth.route_mode)) {
             logger.error('Request mode was not provided');
             throw new InvalidRequestModeError('Request mode was not provided');
         }
@@ -312,12 +312,21 @@ class BaseService {
             return await this.queryTransaction(requestPayload);
         }
 
+        if (!requestPayload.transaction.amount || !requestPayload.transaction.customer.customer_ref || !requestPayload.transaction.customer.mobile_no) {
+            logger.error(
+                `Missing parameter - ${(!requestPayload.transaction.amount) ? 'amount - ' : ''}${(!requestPayload.transaction.customer.customer_ref) ? 'customer_ref - ' : ''}${(!requestPayload.transaction.customer.mobile_no) ? 'mobile_no' : ''}`
+            );
+            throw new InvalidParamsError(
+                `Missing parameter - ${(!requestPayload.transaction.amount) ? 'amount - ' : ''}${(!requestPayload.transaction.customer.customer_ref) ? 'customer_ref - ' : ''}${(!requestPayload.transaction.customer.mobile_no) ? 'mobile_no' : ''}`
+            );
+        }
+
         if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.OPTIONS) {
             return await this.listProviderServices(requestPayload, token);
         }
 
         if ((requestPayload.transaction.mock_mode).toLowerCase() == CONSTANTS.MOCK_MODES.INSPECT) {
-            if (!requestPayload.transaction.details || !requestPayload.transaction.details.order_reference || !requestPayload.transaction.details.biller_id || !requestPayload.request_type || !requestPayload.transaction.customer.customer_ref || !requestPayload.transaction.amount) {
+            if (!requestPayload.transaction.details || (!requestPayload.transaction.details.order_reference && requestPayload.auth.route_mode != CONSTANTS.REQUEST_TYPES.OPTIONS) || !requestPayload.transaction.details.biller_id || !requestPayload.request_type || !requestPayload.transaction.customer.customer_ref || !requestPayload.transaction.amount) {
                 logger.error('Incomplete options request - Required parameters: [order_reference, biller_id, request_type, customer_ref, amount]');
                 throw new InvalidParamsError('Incomplete options request - Required parameters: [order_reference, biller_id, request_type, customer_ref, amount]');
             } else {
@@ -330,29 +339,21 @@ class BaseService {
             throw new InvalidParamsError('Request type has be to passed as pay_electricity ');
         }
 
-        if (!requestPayload.transaction.details.order_reference) {
+        if (!requestPayload.transaction.details.order_reference && requestPayload.auth.route_mode != CONSTANTS.REQUEST_TYPES.OPTIONS) {
             logger.error('Order Reference is a required param for transact calls.');
             throw new InvalidParamsError('Order Reference is a required param for transact calls.');
         }
-        await new Transaction().fetchTransactionByOrderRef(requestPayload.transaction.details.order_reference); // Fetch active transaction by order refrence
+        //I don't think there should be options call for listing in pay electricity
+        // await new Transaction().fetchTransactionByOrderRef(requestPayload.transaction.details.order_reference); // Fetch active transaction by order refrence
 
         if (!requestPayload.transaction.details || !requestPayload.transaction.details.biller_id) {
-            logger.error(`Biller id has to be passed in details object nested in transaction object`);
+            logger.error(`Biller id is not provided`);
             throw new InvalidParamsError('Biller id is not provided');
         }
 
         if (!config.service_biller_ids.pay_electricity.hasOwnProperty(requestPayload.transaction.details.biller_id)) {
             logger.error(`Service "buy_electricity" does not support biller: ${requestPayload.transaction.details.biller_id}`);
             throw new BillerNotSupportedError(`Biller ${requestPayload.transaction.details.biller_id} is not supported by service buy_electricity`)
-        }
-
-        if (!requestPayload.transaction.amount || !requestPayload.transaction.customer.customer_ref || !requestPayload.transaction.customer.mobile_no) {
-            logger.error(
-                `Missing parameter - ${(!requestPayload.transaction.amount) ? 'amount' : ''}-${(!requestPayload.transaction.customer.customer_ref) ? 'customer_ref' : ''}-${(!requestPayload.transaction.customer.mobile_no) ? 'mobile_no' : ''}`
-            );
-            throw new InvalidParamsError(
-                `Missing parameter - ${(!requestPayload.transaction.amount) ? 'amount' : ''}-${(!requestPayload.transaction.customer.customer_ref) ? 'customer_ref' : ''}-${(!requestPayload.transaction.customer.mobile_no) ? 'mobile_no' : ''}`
-            );
         }
 
         const billerId = config.service_biller_ids[`${requestPayload.request_type}`][`${requestPayload.transaction.details.biller_id}`];
@@ -367,7 +368,7 @@ class BaseService {
             service_category_id: billerId,
             meter_number: requestPayload.transaction.customer.customer_ref,
             amount: requestPayload.transaction.amount,
-            phone: requestPayload.transaction.customer.mobile_no
+            phone: requestPayload.transaction.customer.mobile_no //should not start with 234
         };
 
         const electricityResponse = await payantServiceApiCall(token, CONSTANTS.URL_PATHS.buy_electricity, postDetails);
@@ -381,7 +382,7 @@ class BaseService {
         const requestPayload = request.data;
         const token = request.token;
 
-        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.request_mode)) {
+        if (!CONSTANTS.auth.route_mode.includes(requestPayload.auth.route_mode)) {
             logger.error('Request mode was not provided');
             throw new InvalidRequestModeError('Request mode was not provided');
         }
@@ -459,7 +460,7 @@ class BaseService {
         const requestPayload = request.data;
         const token = request.token;
 
-        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.request_mode)) {
+        if (!CONSTANTS.auth.route_mode.includes(requestPayload.auth.route_mode)) {
             logger.error('Request mode was not provided');
             throw new InvalidRequestModeError('Request mode was not provided');
         }
@@ -526,7 +527,7 @@ class BaseService {
         const orderReference = generateRandomReference();
         const isOtpOverride = (requestPayload.transaction.app_info.extras.otp_override == true || (requestPayload.transaction.app_info && requestPayload.transaction.app_info.extras && requestPayload.transaction.app_info.extras.otp_override == true)) ? true : false;
 
-        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.auth.route_mode)) {
+        if (!CONSTANTS.auth.route_mode.includes(requestPayload.auth.route_mode)) {
             logger.error('Route mode was not provided');
             throw new InvalidRequestModeError('Route mode was not provided');
         }
@@ -575,7 +576,7 @@ class BaseService {
 
         if (isOtpOverride) {
             const transactionDetails = mapTransactionDetails(requestPayload.request_ref, requestPayload.transaction.transaction_ref, requestPayload, identityResponse, mapMinNinResponse(identityResponse, orderReference, requestPayload.transaction), CONSTANTS.REQUEST_TYPES.TRANSACT, orderReference, true, null);
-            // await new Transaction().createTransaction(transactionDetails);
+            await new Transaction().createTransaction(transactionDetails);
             const serviceResponse = mapMinNinResponse(identityResponse, orderReference, requestPayload.transaction);
             return {
                 ...serviceResponse,
@@ -586,7 +587,7 @@ class BaseService {
         
         const otp = generateOTP();
         const transactionDetails = mapTransactionDetails(requestPayload.request_ref, requestPayload.transaction.transaction_ref, requestPayload, identityResponse, mapMinNinResponse(identityResponse, orderReference, requestPayload.transaction), CONSTANTS.REQUEST_TYPES.TRANSACT, orderReference, true, otp);
-        // await new Transaction().createTransaction(transactionDetails);
+        await new Transaction().createTransaction(transactionDetails);
 
         const smsData = {
             senderName: 'OnePipe - Verify OTP',
@@ -607,7 +608,7 @@ class BaseService {
         const orderReference = generateRandomReference();
         const isOtpOverride = (requestPayload.transaction.details.otp_override == true || (requestPayload.transaction.app_info && requestPayload.transaction.app_info.extras && requestPayload.transaction.app_info.extras.otp_override == true)) ? true : false;
 
-        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.auth.route_mode)) {
+        if (!CONSTANTS.auth.route_mode.includes(requestPayload.auth.route_mode)) {
             logger.error('Route mode was not provided');
             throw new InvalidRequestModeError('Route mode was not provided');
         }

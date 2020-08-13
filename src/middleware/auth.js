@@ -16,15 +16,13 @@ async function authenticatePayantUser(req, res, next) {
         }
 
         if ((requestPayload.transaction.mock_mode).toLowerCase() == CONSTANTS.MOCK_MODES.INSPECT && requestPayload.auth.route_mode != CONSTANTS.REQUEST_TYPES.QUERY) {
-            next();
+            return next();
         }
 
         // Exclude otp validation request from payant authentication.
         if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.VALIDATE) {
-            next();
+            return next();
         }
-
-        
 
         if ((requestPayload.auth && requestPayload.auth.secure == ';') && (!requestPayload.transaction.app_info || !requestPayload.transaction.app_info.extras || requestPayload.transaction.app_info.extras.phone_number == '')) {
             logger.error('Invalid authentication details - No authentication detail');

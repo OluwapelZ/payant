@@ -83,7 +83,7 @@ function payantServiceApiCall(token, url_path, requestPayload, callback) {
     return axios.post(`${config.payant_base_url}${url_path}`, requestPayload, requestHeaders)
     .then(response => (typeof callback !== 'undefined') ? callback(response.data) : response.data)
     .catch(function (err) {
-        logger.error(`Error occurred on purchasing airtime: ${err.message}`);
+        logger.error(`Error occurred on payant service call: ${err.message}`);
         throw err;
     })
 }
