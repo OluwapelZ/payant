@@ -691,7 +691,7 @@ class BaseService {
             throw new InvalidParamsError(`Required parameter otp and transaction reference`);
         }
 
-        const transaction = new Transaction.fetchTransactionByOrderRef(requestPayload.transaction.transaction_ref);
+        const transaction = new Transaction().fetchTransactionByOrderRef(requestPayload.transaction.transaction_ref);
 
         if (requestPayload.auth.secure != transaction.otp) {
             logger.error('Invalid otp was provided');
