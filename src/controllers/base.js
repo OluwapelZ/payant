@@ -20,37 +20,37 @@ class BaseController {
             return success(res, CONSTANTS.STATUS_CODES.SUCCESS, ResponseMessage.TRANSACTION_SUCCESSFUL, serviceResponse);
         } catch (err) {
             if (err instanceof InvalidParamsError) {
-                failed(req, res, 400, err.message, err.stack);
+                failed(res, 400, err.message, err.stack);
                 throw err;
             }
 
             if (err instanceof InvalidRequestModeError) {
-                failed(req, res, 400, err.message, err.stack);
+                failed(res, 400, err.message, err.stack);
                 throw err;
             }
 
             if (err instanceof TransactionNotFoundError) {
-                failed(req, res, 400, err.message, err.stack);
+                failed(res, 400, err.message, err.stack);
                 throw err;
             }
 
             if (err instanceof BillerNotSupportedError) {
-                failed(req, res, 500, err.message, err.stack);
+                failed(res, 500, err.message, err.stack);
                 throw err;
             }
 
             if (err instanceof BillerProductError) {
-                failed(req, res, 500, err.message, err.stack);
+                failed(res, 500, err.message, err.stack);
                 throw err;
             }
 
             if (err instanceof ServiceProductCategoryError) {
-                failed(req, res, 500, err.message, err.stack);
+                failed(res, 500, err.message, err.stack);
                 throw err;
             }
 
             logger.error(`Internal Server Error: Error occured on making transact request: ${err.message}`);
-            failed(req, res, 500, err.message, err.stack);
+            failed(res, 500, err.message, err.stack);
             throw err;
         }
     }
@@ -61,37 +61,37 @@ class BaseController {
             return success(res, CONSTANTS.STATUS_CODES.SUCCESS, ResponseMessage.TRANSACTION_SUCCESSFUL, serviceResponse);
         } catch (err) {
             if (err instanceof InvalidParamsError) {
-                failed(req, res, 400, err.message, err.stack);
+                failed(res, 400, err.message, err.stack);
                 throw err;
             }
 
             if (err instanceof InvalidRequestModeError) {
-                failed(req, res, 400, err.message, err.stack);
+                failed(res, 400, err.message, err.stack);
                 throw err;
             }
 
             if (err instanceof TransactionNotFoundError) {
-                failed(req, res, 400, err.message, err.stack);
+                failed(res, 400, err.message, err.stack);
                 throw err;
             }
 
             if (err instanceof BillerNotSupportedError) {
-                failed(req, res, 500, err.message, err.stack);
+                failed(res, 500, err.message, err.stack);
                 throw err;
             }
 
             if (err instanceof BillerProductError) {
-                failed(req, res, 500, err.message, err.stack);
+                failed(res, 500, err.message, err.stack);
                 throw err;
             }
 
             if (err instanceof ServiceProductCategoryError) {
-                failed(req, res, 500, err.message, err.stack);
+                failed(res, 500, err.message, err.stack);
                 throw err;
             }
 
             logger.error(`Internal Server Error: Error occured on making transact request: ${err.message}`);
-            failed(req, res, 500, err.message, err.stack);
+            failed(res, 500, err.message, err.stack);
             throw err;  
         }
     }
@@ -102,37 +102,37 @@ class BaseController {
             return success(res, CONSTANTS.STATUS_CODES.SUCCESS, ResponseMessage.TRANSACTION_SUCCESSFUL, serviceResponse);
         } catch (err) {
             if (err instanceof InvalidParamsError) {
-                failed(req, res, 400, err.message, err.stack);
+                failed(res, 400, err.message, err.stack);
                 throw err;
             }
 
             if (err instanceof InvalidRequestModeError) {
-                failed(req, res, 400, err.message, err.stack);
+                failed(res, 400, err.message, err.stack);
                 throw err;
             }
 
             if (err instanceof TransactionNotFoundError) {
-                failed(req, res, 400, err.message, err.stack);
+                failed(res, 400, err.message, err.stack);
                 throw err;
             }
 
             if (err instanceof BillerNotSupportedError) {
-                failed(req, res, 500, err.message, err.stack);
+                failed(res, 500, err.message, err.stack);
                 throw err;
             }
 
             if (err instanceof BillerProductError) {
-                failed(req, res, 500, err.message, err.stack);
+                failed(res, 500, err.message, err.stack);
                 throw err;
             }
 
             if (err instanceof ServiceProductCategoryError) {
-                failed(req, res, 500, err.message, err.stack);
+                failed(res, 500, err.message, err.stack);
                 throw err;
             }
 
             logger.error(`Internal Server Error: Error occured on making transact request: ${err.message}`);
-            failed(req, res, 500, err.message, err.stack);
+            failed(res, 500, err.message, err.stack);
             throw err; 
         }
     }
@@ -143,37 +143,37 @@ class BaseController {
             return success(res, CONSTANTS.STATUS_CODES.SUCCESS, ResponseMessage.TRANSACTION_SUCCESSFUL, serviceResponse);
         } catch (err) {
             if (err instanceof InvalidParamsError) {
-                failed(req, res, 400, err.message, err.stack);
+                failed(res, 400, err.message, err.stack);
                 throw err;
             }
 
             if (err instanceof InvalidRequestModeError) {
-                failed(req, res, 400, err.message, err.stack);
+                failed(res, 400, err.message, err.stack);
                 throw err;
             }
 
             if (err instanceof TransactionNotFoundError) {
-                failed(req, res, 400, err.message, err.stack);
+                failed(res, 400, err.message, err.stack);
                 throw err;
             }
 
             if (err instanceof BillerNotSupportedError) {
-                failed(req, res, 500, err.message, err.stack);
+                failed(res, 500, err.message, err.stack);
                 throw err;
             }
 
             if (err instanceof BillerProductError) {
-                failed(req, res, 500, err.message, err.stack);
+                failed(res, 500, err.message, err.stack);
                 throw err;
             }
 
             if (err instanceof ServiceProductCategoryError) {
-                failed(req, res, 500, err.message, err.stack);
+                failed(res, 500, err.message, err.stack);
                 throw err;
             }
 
             logger.error(`Internal Server Error: Error occured on making transact request: ${err.message}`);
-            failed(req, res, 500, err.message, err.stack);
+            failed(res, 500, err.message, err.stack);
             throw err;
         }
     }
@@ -184,37 +184,37 @@ class BaseController {
             return success(res, CONSTANTS.STATUS_CODES.SUCCESS, ResponseMessage.TRANSACTION_SUCCESSFUL, serviceResponse);
         } catch (err) {
             if (err instanceof InvalidParamsError) {
-                failed(req, res, 400, err.message, err.stack);
+                failed(res, 400, err.message, err.stack);
                 throw err;
             }
 
             if (err instanceof InvalidRequestModeError) {
-                failed(req, res, 400, err.message, err.stack);
+                failed(res, 400, err.message, err.stack);
                 throw err;
             }
 
             if (err instanceof TransactionNotFoundError) {
-                failed(req, res, 400, err.message, err.stack);
+                failed(res, 400, err.message, err.stack);
                 throw err;
             }
 
             if (err instanceof BillerNotSupportedError) {
-                failed(req, res, 500, err.message, err.stack);
+                failed(res, 500, err.message, err.stack);
                 throw err;
             }
 
             if (err instanceof BillerProductError) {
-                failed(req, res, 500, err.message, err.stack);
+                failed(res, 500, err.message, err.stack);
                 throw err;
             }
 
             if (err instanceof ServiceProductCategoryError) {
-                failed(req, res, 500, err.message, err.stack);
+                failed(res, 500, err.message, err.stack);
                 throw err;
             }
 
             logger.error(`Internal Server Error: Error occured on making transact request: ${err.message}`);
-            failed(req, res, 500, err.message, err.stack);
+            failed(res, 500, err.message, err.stack);
             throw err;
         }
     }
@@ -230,42 +230,42 @@ class BaseController {
             waitingForOTP(res, CONSTANTS.STATUS_CODES.WAITING_FOR_OTP, serviceResponse);
         } catch (err) {
             if (err instanceof InvalidParamsError) {
-                failed(req, res, 400, err.message, err.stack);
+                failed(res, 400, err.message, err.stack);
                 throw err;
             }
 
             if (err instanceof InvalidRequestModeError) {
-                failed(req, res, 400, err.message, err.stack);
+                failed(res, 400, err.message, err.stack);
                 throw err;
             }
 
             if (err instanceof TransactionNotFoundError) {
-                failed(req, res, 400, err.message, err.stack);
+                failed(res, 400, err.message, err.stack);
                 throw err;
             }
 
             if (err instanceof CustomerVerificationError) {
-                failed(req, res, 400, err.message, err.stack);
+                failed(res, 400, err.message, err.stack);
                 throw err;
             }
 
             if (err instanceof BillerNotSupportedError) {
-                failed(req, res, 500, err.message, err.stack);
+                failed(res, 500, err.message, err.stack);
                 throw err;
             }
 
             if (err instanceof BillerProductError) {
-                failed(req, res, 500, err.message, err.stack);
+                failed(res, 500, err.message, err.stack);
                 throw err;
             }
 
             if (err instanceof ServiceProductCategoryError) {
-                failed(req, res, 500, err.message, err.stack);
+                failed(res, 500, err.message, err.stack);
                 throw err;
             }
 
             logger.error(`Internal Server Error: Error occured on making transact request: ${err}`);
-            failed(req, res, 500, err.message, err.stack);
+            failed(res, 500, err.message, err.stack);
             throw err;  
         }
     }
@@ -281,42 +281,42 @@ class BaseController {
             waitingForOTP(res, CONSTANTS.STATUS_CODES.WAITING_FOR_OTP, serviceResponse);
         } catch (err) {
             if (err instanceof InvalidParamsError) {
-                failed(req, res, 400, err.message, err.stack);
+                failed(res, 400, err.message, err.stack);
                 throw err;
             }
 
             if (err instanceof InvalidRequestModeError) {
-                failed(req, res, 400, err.message, err.stack);
+                failed(res, 400, err.message, err.stack);
                 throw err;
             }
 
             if (err instanceof TransactionNotFoundError) {
-                failed(req, res, 400, err.message, err.stack);
+                failed(res, 400, err.message, err.stack);
                 throw err;
             }
 
             if (err instanceof CustomerVerificationError) {
-                failed(req, res, 400, err.message, err.stack);
+                failed(res, 400, err.message, err.stack);
                 throw err;
             }
 
             if (err instanceof BillerNotSupportedError) {
-                failed(req, res, 500, err.message, err.stack);
+                failed(res, 500, err.message, err.stack);
                 throw err;
             }
 
             if (err instanceof BillerProductError) {
-                failed(req, res, 500, err.message, err.stack);
+                failed(res, 500, err.message, err.stack);
                 throw err;
             }
 
             if (err instanceof ServiceProductCategoryError) {
-                failed(req, res, 500, err.message, err.stack);
+                failed(res, 500, err.message, err.stack);
                 throw err;
             }
 
             logger.error(`Internal Server Error: Error occured on making transact request: ${err.message}`);
-            failed(req, res, 500, err.message, err.stack);
+            failed(res, 500, err.message, err.stack);
             throw err;  
         }
     }

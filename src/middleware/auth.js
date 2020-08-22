@@ -12,7 +12,7 @@ async function authenticatePayantUser(req, res, next) {
         
         if (!CONSTANTS.MOCK_MODES.ALL.includes((requestPayload.transaction.mock_mode).toLowerCase())) {
             logger.error('Mock mode must be provided for any request to payant: [inspect or live]');
-            return failed(req, res, 401, ResponseMessages.INVALID_MOCK_MODE_ERROR);
+            return failed(res, 401, ResponseMessages.INVALID_MOCK_MODE_ERROR);
         }
 
         if ((requestPayload.transaction.mock_mode).toLowerCase() == CONSTANTS.MOCK_MODES.INSPECT && requestPayload.auth.route_mode != CONSTANTS.REQUEST_TYPES.QUERY) {
@@ -26,19 +26,19 @@ async function authenticatePayantUser(req, res, next) {
 
         if ((requestPayload.auth && requestPayload.auth.secure == ';') && (!requestPayload.transaction.app_info || !requestPayload.transaction.app_info.extras || requestPayload.transaction.app_info.extras.phone_number == '')) {
             logger.error('Invalid authentication details - No authentication detail');
-            return failed(req, res, 401, ResponseMessages.NO_AUTH_DETAILS_PROVIDED);
+            return failed(res, 401, ResponseMessages.NO_AUTH_DETAILS_PROVIDED);
         }
 
         const authResponse = await authUser(requestPayload);
         if (!authResponse) {
-            return failed(req, res, 401, ResponseMessages.AUTHENICATION_FAILED);
+            return failed(res, 401, ResponseMessages.AUTHENICATION_FAILED);
         }
 
         req.body.token = authResponse.token;
         next();
     } catch (err) {
         logger.error(`Internal Server Error on authentication attempt: ${err}`);
-        failed(req, res, 500, err.message, err.stack);
+        failed(res, 500, err.message, err.stack);
         throw err;
     }
 }

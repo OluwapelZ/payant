@@ -244,22 +244,7 @@ function mapMidNinResponse(identityResponse, orderReference, isMock=false) {
     }
 }
 
-function mapAPILogger(request, response, body) {
-    const requestPayload = decryptData(request.body.data);
-    const responsePayload = decryptData(body.data);
-    if (!requestPayload.transaction) {
-        requestPayload.transaction = {
-            client_info: {
-                id: 'test-client-id',
-                name: 'Test name'
-            },
-            app_info: {
-            id: 'test-app-id',
-            name: 'Test app information details'
-            },
-            transaction_ref: 'test_reference'
-        }
-    }
+function mapAPILogger(requestPayload, responsePayload) {
     return {
         platform: "Payant",
         client: {
@@ -270,24 +255,24 @@ function mapAPILogger(request, response, body) {
         },
         transaction: {
             transaction_ref: requestPayload.transaction.transaction_ref,
-            transaction_timestamp: now().toISOString()
+            transaction_timestamp: requestPayload.transaction_time,
         },
         request: {
-            source_name: "onepipe payant integration",
+            source_name: "Onepipe payant integration",
             destination_name: "Payant",
             request_type: "service name",
             request_timestamp: now().toISOString(),
             request_description: "",
             destination_url: "",
-            request_headers: request.headers,
-            request_body: requestPayload
+            request_headers: requestPayload.headers,
+            request_body: requestPayload.body
         },
         response: {
             response_timestamp: now().toISOString(),
-            response_http_status: response.status,
-            response_code: response.statusCode,
-            response_headers: response._headers,
-            response_body: responsePayload
+            response_http_status: responsePayload.statusText,
+            response_code: responsePayload.status,
+            response_headers: responsePayload.headers,
+            response_body: responsePayload.data
         }
     }
 }

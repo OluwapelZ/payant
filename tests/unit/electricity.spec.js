@@ -77,7 +77,6 @@ describe('Electricity Service', () => {
     it('should throw error when customer ref, amount or mobile number is not passed', async (done) => {
         const requestPayload = Object.assign({}, invalidData);
         requestPayload.auth.route_mode = 'transact';
-        const fetchTransactionByRefMock = (Transaction.prototype.fetchTransactionByOrderRef = jest.fn());
         requestPayload.request_type = 'pay_electricity';
         requestPayload.transaction.details.biller_id = 'IKEDCPR';
         requestPayload.transaction.details.order_reference = 'sfsfsdf';
@@ -86,7 +85,6 @@ describe('Electricity Service', () => {
             await baseService.buyElectricityService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
             done();
         } catch (error) {
-            expect(fetchTransactionByRefMock).toHaveBeenCalled();
             expect(error instanceof InvalidParamsError).toBe(true);
             done();
         }

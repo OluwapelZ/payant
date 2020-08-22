@@ -108,7 +108,7 @@ class BaseService {
                 throw new CustomerVerificationError(`Missing parameter customer_ref for service "${request.request_type}"`);
             }
 
-            const verifyCustomer = await payantServiceApiCall(token, `${CONSTANTS.URL_PATHS.list_services_products}/${billerId}/verify`, { account: request.transaction.customer.customer_ref });
+            const verifyCustomer = await payantServiceApiCall(token, `${CONSTANTS.URL_PATHS.list_services_products}/${billerId}/verify`, { account: request.transaction.customer.customer_ref }, request);
             if (verifyCustomer.status != CONSTANTS.PAYANT_STATUS_TYPES.successful) {
                 logger.error(`Customer unique reference verification with biller ${request.transaction.details.biller_id} failed: ${verifyCustomer.message}`);
                 throw new CustomerVerificationError(`Customer unique reference verification with biller ${request.transaction.details.biller_id} failed: ${verifyCustomer.message}`);
@@ -135,9 +135,9 @@ class BaseService {
         const requestPayload = request.data;
         const token = request.token;
 
-        if (!CONSTANTS.auth.route_mode.includes(requestPayload.auth.route_mode)) {
-            logger.error('Request mode was not provided');
-            throw new InvalidRequestModeError('Request mode was not provided');
+        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.auth.route_mode)) {
+            logger.error('Invalid request mode was provided');
+            throw new InvalidRequestModeError('Invalid request mode was provided');
         }
 
         if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.QUERY) {
@@ -190,7 +190,7 @@ class BaseService {
             status_url: CONSTANTS.SERVICE_STATUS_URL.BUY_AIRTIME
         };
 
-        const airtimeResponse = await payantServiceApiCall(token, CONSTANTS.URL_PATHS.airtime, postDetails, (data) => {
+        const airtimeResponse = await payantServiceApiCall(token, CONSTANTS.URL_PATHS.airtime, postDetails, requestPayload, (data) => {
             if (data.status === CONSTANTS.PAYANT_STATUS_TYPES.error) {
                 logger.error(`Provider error response on attempt to make airtime purchase: ${data.message}`);
                 throw new ProviderResponseError(`Provider error response on attempt to make airtime purchase: ${data.message}`);
@@ -218,9 +218,9 @@ class BaseService {
         const requestPayload = request.data;
         const token = request.token;
 
-        if (!CONSTANTS.auth.route_mode.includes(requestPayload.auth.route_mode)) {
-            logger.error('Request mode was not provided');
-            throw new InvalidRequestModeError('Request mode was not provided');
+        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.auth.route_mode)) {
+            logger.error('invalid request mode was provided');
+            throw new InvalidRequestModeError('invalid request mode was provided');
         }
 
         if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.QUERY) {
@@ -275,7 +275,7 @@ class BaseService {
             status_url: CONSTANTS.SERVICE_STATUS_URL.BUY_AIRTIME
         };
 
-        const dataResponse = await payantServiceApiCall(token, CONSTANTS.URL_PATHS.data, postDetails, (data) => {
+        const dataResponse = await payantServiceApiCall(token, CONSTANTS.URL_PATHS.data, postDetails, requestPayload, (data) => {
             if (data.status === CONSTANTS.PAYANT_STATUS_TYPES.error) {
                 logger.error(`Provider error response on attempt to make data purchase: ${data.message}`);
                 throw new ProviderResponseError(`Provider error response on attempt to make data purchase: ${data.message}`);
@@ -303,9 +303,9 @@ class BaseService {
         const requestPayload = request.data;
         const token = request.token;
 
-        if (!CONSTANTS.auth.route_mode.includes(requestPayload.auth.route_mode)) {
-            logger.error('Request mode was not provided');
-            throw new InvalidRequestModeError('Request mode was not provided');
+        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.auth.route_mode)) {
+            logger.error('invalid request mode was provided');
+            throw new InvalidRequestModeError('invalid request mode was provided');
         }
 
         if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.QUERY) {
@@ -343,8 +343,8 @@ class BaseService {
             logger.error('Order Reference is a required param for transact calls.');
             throw new InvalidParamsError('Order Reference is a required param for transact calls.');
         }
-        //I don't think there should be options call for listing in pay electricity
-        // await new Transaction().fetchTransactionByOrderRef(requestPayload.transaction.details.order_reference); // Fetch active transaction by order refrence
+
+        await new Transaction().fetchTransactionByOrderRef(requestPayload.transaction.details.order_reference); // Fetch active transaction by order refrence
 
         if (!requestPayload.transaction.details || !requestPayload.transaction.details.biller_id) {
             logger.error(`Biller id is not provided`);
@@ -357,7 +357,7 @@ class BaseService {
         }
 
         const billerId = config.service_biller_ids[`${requestPayload.request_type}`][`${requestPayload.transaction.details.biller_id}`];
-        const verifyCustomer = await payantServiceApiCall(token, `${CONSTANTS.URL_PATHS.list_services_products}/${billerId}/verify`, { account: requestPayload.transaction.customer.customer_ref });
+        const verifyCustomer = await payantServiceApiCall(token, `${CONSTANTS.URL_PATHS.list_services_products}/${billerId}/verify`, { account: requestPayload.transaction.customer.customer_ref }, requestPayload);
 
         if (verifyCustomer.status != CONSTANTS.PAYANT_STATUS_TYPES.successful) {
             logger.error(`Customer unique reference verification with biller ${requestPayload.transaction.details.biller_id} failed: ${verifyCustomer.message}`);
@@ -371,7 +371,7 @@ class BaseService {
             phone: requestPayload.transaction.customer.mobile_no //should not start with 234
         };
 
-        const electricityResponse = await payantServiceApiCall(token, CONSTANTS.URL_PATHS.buy_electricity, postDetails);
+        const electricityResponse = await payantServiceApiCall(token, CONSTANTS.URL_PATHS.buy_electricity, postDetails, requestPayload);
         const electricity = mapElectricityResponse(electricityResponse.transaction);
 
         await this.storeTransaction(requestPayload, electricityResponse, electricity);
@@ -382,9 +382,9 @@ class BaseService {
         const requestPayload = request.data;
         const token = request.token;
 
-        if (!CONSTANTS.auth.route_mode.includes(requestPayload.auth.route_mode)) {
-            logger.error('Request mode was not provided');
-            throw new InvalidRequestModeError('Request mode was not provided');
+        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.auth.route_mode)) {
+            logger.error('invalid request mode was provided');
+            throw new InvalidRequestModeError('invalid request mode was provided');
         }
 
         if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.QUERY) {
@@ -432,7 +432,7 @@ class BaseService {
 
         const billerId = config.service_biller_ids[`${requestPayload.request_type}`][`${requestPayload.transaction.details.biller_id}`];
 
-        const verifyCustomer = await payantServiceApiCall(token, `${CONSTANTS.URL_PATHS.list_services_products}/${billerId}/verify`, { account: requestPayload.transaction.customer.customer_ref });
+        const verifyCustomer = await payantServiceApiCall(token, `${CONSTANTS.URL_PATHS.list_services_products}/${billerId}/verify`, { account: requestPayload.transaction.customer.customer_ref }, requestPayload);
 
         if (verifyCustomer.status != CONSTANTS.PAYANT_STATUS_TYPES.successful) {
             logger.error(`Customer unique reference verification with biller ${requestPayload.transaction.details.biller_id} failed: ${verifyCustomer.message}`);
@@ -449,7 +449,7 @@ class BaseService {
             phone: requestPayload.transaction.customer.mobile_no,
         }
 
-        const tvResponse = await payantServiceApiCall(token, CONSTANTS.URL_PATHS.buy_tv, postDetails);
+        const tvResponse = await payantServiceApiCall(token, CONSTANTS.URL_PATHS.buy_tv, postDetails, requestPayload);
         const tv = mapTvResponse(requestPayload, tvResponse);
 
         await this.storeTransaction(requestPayload, tvResponse, tv);
@@ -460,9 +460,9 @@ class BaseService {
         const requestPayload = request.data;
         const token = request.token;
 
-        if (!CONSTANTS.auth.route_mode.includes(requestPayload.auth.route_mode)) {
-            logger.error('Request mode was not provided');
-            throw new InvalidRequestModeError('Request mode was not provided');
+        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.auth.route_mode)) {
+            logger.error('invalid request mode was provided');
+            throw new InvalidRequestModeError('invalid request mode was provided');
         }
 
         if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.QUERY) {
@@ -515,7 +515,7 @@ class BaseService {
             pins: 1,
             amount: requestPayload.transaction.amount
         };
-        const scratchCardResponse = await payantServiceApiCall(token, CONSTANTS.URL_PATHS.buy_scratch_card, postDetails);
+        const scratchCardResponse = await payantServiceApiCall(token, CONSTANTS.URL_PATHS.buy_scratch_card, postDetails, requestPayload);
         const scratchCard = mapScratchCardResponse(scratchCardResponse.transaction, generateRandomReference());
 
         await this.storeTransaction(requestPayload, scratchCardResponse, scratchCard);
@@ -527,7 +527,7 @@ class BaseService {
         const orderReference = generateRandomReference();
         const isOtpOverride = (requestPayload.transaction.app_info.extras.otp_override == true || (requestPayload.transaction.app_info && requestPayload.transaction.app_info.extras && requestPayload.transaction.app_info.extras.otp_override == true)) ? true : false;
 
-        if (!CONSTANTS.auth.route_mode.includes(requestPayload.auth.route_mode)) {
+        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.auth.route_mode)) {
             logger.error('Route mode was not provided');
             throw new InvalidRequestModeError('Route mode was not provided');
         }
@@ -608,7 +608,7 @@ class BaseService {
         const orderReference = generateRandomReference();
         const isOtpOverride = (requestPayload.transaction.details.otp_override == true || (requestPayload.transaction.app_info && requestPayload.transaction.app_info.extras && requestPayload.transaction.app_info.extras.otp_override == true)) ? true : false;
 
-        if (!CONSTANTS.auth.route_mode.includes(requestPayload.auth.route_mode)) {
+        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.auth.route_mode)) {
             logger.error('Route mode was not provided');
             throw new InvalidRequestModeError('Route mode was not provided');
         }

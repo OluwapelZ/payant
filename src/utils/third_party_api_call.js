@@ -2,6 +2,8 @@ const axios = require('axios');
 const config = require('../config/config');
 const CONSTANTS = require('../constants/constant');
 const logger = require('./logger');
+const { mapAPILogger } = require('./mapper');
+const { now } = require('./util');
 
 /**
  * Get Transaction status
@@ -70,9 +72,10 @@ function listServiceProductsAPI(token, billerId, account) {
  * Send request to purchase airtime
  * @param {string} token 
  * @param {string} url_path 
- * @param {object} requestPayload 
+ * @param {object} payantRequestPayload
+ * @param {object} onePipeRequestPayload 
  */
-function payantServiceApiCall(token, url_path, requestPayload, callback) {
+function payantServiceApiCall(token, url_path, payantRequestPayload, onePipeRequestPayload, callback) {
     const requestHeaders = {
         headers: {
             Authorization: token
@@ -80,8 +83,17 @@ function payantServiceApiCall(token, url_path, requestPayload, callback) {
     };
     requestHeaders.headers['Content-Type'] = 'application/json';
 
-    return axios.post(`${config.payant_base_url}${url_path}`, requestPayload, requestHeaders)
-    .then(response => (typeof callback !== 'undefined') ? callback(response.data) : response.data)
+    return axios.post(`${config.payant_base_url}${url_path}`, payantRequestPayload, requestHeaders)
+    .then(async (response) => {
+        const apiLoggerRequest = {
+            ...onePipeRequestPayload,
+            body: payantRequestPayload,
+            headers: requestHeaders,
+            transactio_time: now().toISOString(),
+        }
+        await apiLogger(mapAPILogger(apiLoggerRequest, response));
+        return (typeof callback !== 'undefined') ? callback(response.data) : response.data}
+    )
     .catch(function (err) {
         logger.error(`Error occurred on payant service call: ${err.message}`);
         throw err;
@@ -90,18 +102,28 @@ function payantServiceApiCall(token, url_path, requestPayload, callback) {
 
 /**
  * Send request to purchase airtime
- * @param {object} requestPayload 
+ * @param {object} payantRequestPayload 
+ * @param {object} onePipeRequestPayload
  */
-function payantIdentityApiCall(requestPayload) {
+function payantIdentityApiCall(payantRequestPayload, onePipeRequestPayload) {
     const requestHeaders = {
         headers: {
-            Authorization: `Bearer ${requestPayload.secretKey}`
+            Authorization: `Bearer ${payantRequestPayload.secretKey}`
         }
     };
     requestHeaders.headers['Content-Type'] = 'application/json';
 
-    return axios.post(`${config.payant_identity_verification_base_url}/verification`, requestPayload, requestHeaders)
-    .then(response => response.data)
+    return axios.post(`${config.payant_identity_verification_base_url}/verification`, payantRequestPayload, requestHeaders)
+    .then(async (response) => {
+        const apiLoggerRequest = {
+            ...onePipeRequestPayload,
+            body: payantRequestPayload,
+            headers: requestHeaders,
+            transactio_time: now().toISOString(),
+        }
+        await apiLogger(mapAPILogger(apiLoggerRequest, response));
+        return response.data
+    })
     .catch(function (err) {
         logger.error(`Error occurred on payant identity call: ${err.message}`);
         throw err;

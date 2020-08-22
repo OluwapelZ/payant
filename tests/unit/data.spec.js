@@ -57,7 +57,7 @@ describe('Data Service', () => {
         }
     });
 
-    it('should throw error if provider does not support the provided telco_code', async (done) => {
+    it('should throw error if customer ref or amount is not passed', async (done) => {
         const requestPayload = Object.assign({}, invalidData);
         requestPayload.auth.route_mode = 'transact';
         const fetchTransactionByRefMock = (Transaction.prototype.fetchTransactionByOrderRef = jest.fn());
@@ -77,7 +77,7 @@ describe('Data Service', () => {
         }
     });
 
-    it('should throw error if provider does not support the provided telco_code', async (done) => {
+    it('should successfully call buy data from payant', async (done) => {
         const requestPayload = Object.assign({}, invalidData);
         requestPayload.auth.route_mode = 'transact';
         const fetchTransactionByRefMock = (Transaction.prototype.fetchTransactionByOrderRef = jest.fn());
