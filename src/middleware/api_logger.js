@@ -9,4 +9,4 @@ function redact(body, req, res) {
     return;
 }
 
-module.exports = mung.json(redact)
+module.exports = mung.json(redact)  

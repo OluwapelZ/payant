@@ -1,6 +1,7 @@
 const CONSTANTS = require('../constants/constant');
 const config = require('../config/config');
 const { generateRandomReference, now, matchString } = require('../utils/util');
+const { decryptData } = require('./crypt');
 
 function mapErrorResponse(message) {
     return {
@@ -243,48 +244,35 @@ function mapMidNinResponse(identityResponse, orderReference, isMock=false) {
     }
 }
 
-function mapAPILogger(request, response, body) {
-    if (!request.transaction) {
-        request.transaction = {
-            client_info: {
-                id: 'test-client-id',
-                name: 'Test name'
-            },
-            app_info: {
-            id: 'test-app-id',
-            name: 'Test app information details'
-            },
-            transaction_ref: 'test_reference'
-        }
-    }
+function mapAPILogger(requestPayload, responsePayload) {
     return {
         platform: "Payant",
         client: {
-            client_id: request.transaction.client_info.id,
-            client_name: request.transaction.client_info.name,
-            client_app_id: request.transaction.app_info.id,
-            client_app_name: request.transaction.app_info.id,
+            client_id: requestPayload.transaction.client_info.id,
+            client_name: requestPayload.transaction.client_info.name,
+            client_app_id: requestPayload.transaction.app_info.id,
+            client_app_name: requestPayload.transaction.app_info.id,
         },
         transaction: {
-            transaction_ref: request.transaction.transaction_ref,
-            transaction_timestamp: now().toISOString()
+            transaction_ref: requestPayload.transaction.transaction_ref,
+            transaction_timestamp: requestPayload.transaction_time,
         },
         request: {
-            source_name: "onepipe payant integration",
+            source_name: "Onepipe payant integration",
             destination_name: "Payant",
             request_type: "service name",
             request_timestamp: now().toISOString(),
             request_description: "",
             destination_url: "",
-            request_headers: JSON.stringify(request.headers),
-            request_body: JSON.stringify(body)
+            request_headers: requestPayload.headers,
+            request_body: requestPayload.body
         },
         response: {
             response_timestamp: now().toISOString(),
-            response_http_status: response.status,
-            response_code: response.statusCode,
-            response_headers: JSON.stringify(response._headers),
-            response_body: JSON.stringify(body)
+            response_http_status: responsePayload.statusText,
+            response_code: responsePayload.status,
+            response_headers: responsePayload.headers,
+            response_body: responsePayload.data
         }
     }
 }
