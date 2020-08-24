@@ -99,7 +99,6 @@ function payantIdentityApiCall(requestPayload) {
         }
     };
     requestHeaders.headers['Content-Type'] = 'application/json';
-
     return axios.post(`${config.payant_identity_verification_base_url}/verification`, requestPayload, requestHeaders)
     .then(response => response.data)
     .catch(function (err) {
@@ -119,7 +118,6 @@ function apiLogger(logData) {
         }
     }
     requestHeaders.headers['Content-Type'] = 'application/json';
-
     return axios.post(`${config.api_logger_url}`, logData, requestHeaders)
     .then(response => {
         logger.info(`Api logger status: ${(response.status == 200) ? 'Successful' : 'Failed'}`);

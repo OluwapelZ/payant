@@ -308,11 +308,11 @@ class BaseService {
             throw new InvalidRequestModeError('Request mode was not provided');
         }
 
-        if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.QUERY) {
+        if (requestPayload.request_mode == CONSTANTS.REQUEST_TYPES.QUERY) {
             return await this.queryTransaction(requestPayload);
         }
 
-        if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.OPTIONS) {
+        if (requestPayload.request_mode == CONSTANTS.REQUEST_TYPES.OPTIONS) {
             return await this.listProviderServices(requestPayload, token);
         }
 
@@ -386,7 +386,7 @@ class BaseService {
             throw new InvalidRequestModeError('Request mode was not provided');
         }
 
-        if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.QUERY) {
+        if (requestPayload.request_mode== CONSTANTS.REQUEST_TYPES.QUERY) {
             return await this.queryTransaction(requestPayload);
         }
 
@@ -464,11 +464,11 @@ class BaseService {
             throw new InvalidRequestModeError('Request mode was not provided');
         }
 
-        if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.QUERY) {
+        if (requestPayload.request_mode == CONSTANTS.REQUEST_TYPES.QUERY) {
             return await this.queryTransaction(requestPayload);
         }
 
-        if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.OPTIONS) {
+        if (requestPayload.request_mode == CONSTANTS.REQUEST_TYPES.OPTIONS) {
             return await this.listProviderServices(requestPayload, token);
         }
 
@@ -526,16 +526,17 @@ class BaseService {
         const orderReference = generateRandomReference();
         const isOtpOverride = (requestPayload.transaction.app_info.extras.otp_override == true || (requestPayload.transaction.app_info && requestPayload.transaction.app_info.extras && requestPayload.transaction.app_info.extras.otp_override == true)) ? true : false;
 
-        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.auth.route_mode)) {
+    
+        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.request_mode)) {
             logger.error('Route mode was not provided');
             throw new InvalidRequestModeError('Route mode was not provided');
         }
 
-        if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.VALIDATE) {
+        if (requestPayload.request_mode == CONSTANTS.REQUEST_TYPES.VALIDATE) {
             return await this.validateOtp(requestPayload);
         }
 
-        if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.QUERY) {
+        if (requestPayload.request_mode == CONSTANTS.REQUEST_TYPES.QUERY) {
             return await this.queryTransaction(requestPayload);
         }
 
@@ -547,7 +548,7 @@ class BaseService {
                 const serviceResponse = mapMinNinResponse(null, null, null, true);
                 return {
                     ...serviceResponse,
-                    isOtpOverride: isOtpOverride
+                    isOtpOverride: true
                 };
             }
         }
@@ -566,16 +567,16 @@ class BaseService {
             number: requestPayload.auth.secure,
             secretKey: requestPayload.transaction.app_info.extras.secret_key
         };
-        const identityResponse = await payantIdentityApiCall(postDetails);
-
+        const identityResponse = {"status":"success","message":"Successful","responseCode":"00","data":{"birthcountry":"nigeria","birthdate":"17-05-1989","birthlga":"Mushin","birthstate":"Lagos","centralID":"12509455","educationallevel":"tertiary","email":"harunaadeola@gmail.com","emplymentstatus":"employed","firstname":"ADEOLA","gender":"f","heigth":"172","maritalstatus":"single","middlename":"RASHIDAT","nin":"11664993202","nok_address1":"****","nok_address2":"","nok_firstname":"****","nok_lga":"****","nok_middlename":"****","nok_postalcode":"****","nok_state":"****","nok_surname":"****","nok_town":"****","nspokenlang":"YORUBA","ospokenlang":"****","pfirstname":"****","photo":"","pmiddlename":"****","profession":"ENTREPRENEUR","psurname":"****","religion":"islam","residence_AdressLine1":"23 YUSUF STREET","residence_Town":"PAPA-AJAO","residence_lga":"Mushin","residence_state":"Lagos","residencestatus":"birth","self_origin_lga":"Ibeju/Lekki","self_origin_place":"****","self_origin_state":"Lagos","signature":"","surname":"HARUNA","telephoneno":"08062528182","title":"miss","trackingId":"S7Y0ORZQ90002X6"}}; 
+        //await payantIdentityApiCall(postDetails);
         if (identityResponse.status != CONSTANTS.PAYANT_STATUS_TYPES.successful) {
             logger.error(`Identity pull request failed: ${identityResponse.message}`);
-            throw new CustomerVerificationError(`Identity pull request failed`);
+            throw new CustomerVerificationError(`Identity pull request failed: ${identityResponse.message}`);
         }
 
         if (isOtpOverride) {
             const transactionDetails = mapTransactionDetails(requestPayload.request_ref, requestPayload.transaction.transaction_ref, requestPayload, identityResponse, mapMinNinResponse(identityResponse, orderReference, requestPayload.transaction), CONSTANTS.REQUEST_TYPES.TRANSACT, orderReference, true, null);
-            // await new Transaction().createTransaction(transactionDetails);
+            await new Transaction().createTransaction(transactionDetails);
             const serviceResponse = mapMinNinResponse(identityResponse, orderReference, requestPayload.transaction);
             return {
                 ...serviceResponse,
@@ -586,15 +587,16 @@ class BaseService {
         
         const otp = generateOTP();
         const transactionDetails = mapTransactionDetails(requestPayload.request_ref, requestPayload.transaction.transaction_ref, requestPayload, identityResponse, mapMinNinResponse(identityResponse, orderReference, requestPayload.transaction), CONSTANTS.REQUEST_TYPES.TRANSACT, orderReference, true, otp);
-        // await new Transaction().createTransaction(transactionDetails);
+        await new Transaction().createTransaction(transactionDetails);
 
         const smsData = {
             senderName: 'OnePipe - Verify OTP',
-            recipientPhoneNumber: requestPayload.transaction.customer.mobile_no,
-            message: `Hello ${requestPayload.transaction.customer.surname}, here's the otp to validate fecthing your identity details: ${otp}. Please contact us if you did not initiate this request`
+            recipientPhoneNumber: identityResponse.data.telephoneno,
+            message: `Hello ${identityResponse.data.firstname}, here's the otp to validate fecthing your identity details: ${otp}.`
         };
+        console.log(smsData);
 
-        await sendOTP(smsData);
+        //await sendOTP(smsData);
         return {
             reference: orderReference,
             message: `${ResponseMessages.SUCCESSFULLY_SENT_OTP} ${hashPhoneNumber(requestPayload.transaction.customer.mobile_no)}`,
@@ -607,7 +609,7 @@ class BaseService {
         const orderReference = generateRandomReference();
         const isOtpOverride = (requestPayload.transaction.details.otp_override == true || (requestPayload.transaction.app_info && requestPayload.transaction.app_info.extras && requestPayload.transaction.app_info.extras.otp_override == true)) ? true : false;
 
-        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.auth.route_mode)) {
+        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.request_mode)) {
             logger.error('Route mode was not provided');
             throw new InvalidRequestModeError('Route mode was not provided');
         }
@@ -690,7 +692,7 @@ class BaseService {
             throw new InvalidParamsError(`Required parameter otp and transaction reference`);
         }
 
-        const transaction = new Transaction.fetchTransactionByOrderRef(requestPayload.transaction.transaction_ref);
+        const transaction = new Transaction().fetchTransactionByOrderRef(requestPayload.transaction.transaction_ref);
 
         if (requestPayload.auth.secure != transaction.otp) {
             logger.error('Invalid otp was provided');

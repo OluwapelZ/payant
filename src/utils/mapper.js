@@ -217,7 +217,7 @@ function mapMinNinResponse(identityResponse, orderReference, transactionRequestP
             middle_name: isMock ? true : matchString(transactionRequestPayload.details.middle_name, identityResponse.data.middlename),
             last_name: isMock ? true : matchString(transactionRequestPayload.customer.lastname, identityResponse.data.surname),
             dob: isMock ? true : matchString(transactionRequestPayload.details.dob, identityResponse.data.birthdate),
-            reference: isMock ? "mockReference" : orderReference,
+            reference: isMock ? "N123456789MIOL" : orderReference,
             meta: {}
         }
     };
