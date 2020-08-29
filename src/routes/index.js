@@ -12,6 +12,12 @@ router.get('/health', function(req, res, next) {
     message: 'Payant service is in good condition 😀'
   })
 });
+router.get('/', function(req, res, next) {
+  res.json({
+    status: CONSTANTS.REQUEST_STATUSES.SUCCESSFUL,
+    message: 'Payant Microservice'
+  })
+});
 
 //Transact
 router.post('/buy_airtime', authMiddleware.authenticatePayantUser, baseController.buyAirtime);
