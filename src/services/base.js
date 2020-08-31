@@ -26,20 +26,15 @@ const logger = require('../utils/logger');
 
 class BaseService {
     async queryTransaction(requestPayload) {
-        const serviceResponse = null;
-        const transaction = null;
-
-        if (!CONSTANTS.AVAILABLE_SERVICES.includes(requestPayload.request_type)) {
-            logger.error(`Query request was made to a service ${requestPayload.request_type} currently not implemented`);
-            throw new ServiceNotImplementedError(`Service ${requestPayload.request_type} is currently not implemented`);
-        }
+        let serviceResponse = null;
+        let transaction = null;
 
         if (!requestPayload.transaction || !requestPayload.transaction.transaction_ref) {
             logger.error('Transaction reference is required for query requests');
             throw new InvalidRequestModeError('Transaction reference is required for query requests');
         }
-
-        switch(requestPayload.request_type) {
+       const parsedRequestType = requestPayload.request_type.replace(/ /g,'_');
+        switch(parsedRequestType) {
             case CONSTANTS.REQUEST_TYPES.BUY_AIRTIME:
                 transaction = await new Transaction().fetchTransactionByReference(requestPayload.transaction.transaction_ref);
                 serviceResponse = this.queryTransactionBuilder(requestPayload, transaction);
@@ -62,7 +57,7 @@ class BaseService {
                 break;
             case CONSTANTS.REQUEST_TYPES.NIN_MIN:
                 transaction = await new Transaction().fetchTransactionByReference(requestPayload.transaction.transaction_ref);
-                serviceResponse = this.queryTransactionBuilder(requestPayload, transaction);
+                serviceResponse = await this.queryTransactionBuilder(requestPayload, transaction);
                 break;
             case CONSTANTS.REQUEST_TYPES.NIN_MID:
                 transaction = await new Transaction().fetchTransactionByReference(requestPayload.transaction.transaction_ref);
@@ -525,7 +520,7 @@ class BaseService {
     async lookupNinMinService(request) {
         const requestPayload = decryptData(request.data);
         const orderReference = generateRandomReference();
-        const isOtpOverride = (requestPayload.transaction.app_info.extras.otp_override == true || (requestPayload.transaction.app_info && requestPayload.transaction.app_info.extras && requestPayload.transaction.app_info.extras.otp_override == true)) ? true : false;
+        const isOtpOverride = ((requestPayload.transaction.app_info && requestPayload.transaction.app_info.extras && requestPayload.transaction.app_info.extras.otp_override == "true")) ? true : false;
 
     
         if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.request_mode)) {
@@ -534,11 +529,15 @@ class BaseService {
         }
 
         if (requestPayload.request_mode == CONSTANTS.REQUEST_TYPES.VALIDATE) {
-            return await this.validateOtp(requestPayload);
+            let resp = await this.validateOtp(requestPayload);
+            resp.isOtpOverride = true;
+            return resp;
         }
 
         if (requestPayload.request_mode == CONSTANTS.REQUEST_TYPES.QUERY) {
-            return await this.queryTransaction(requestPayload);
+            let resp =  await this.queryTransaction(requestPayload);
+            resp.isOtpOverride = true;
+            return resp;
         }
 
         if ((requestPayload.transaction.mock_mode).toLowerCase() == CONSTANTS.MOCK_MODES.INSPECT) {
@@ -568,26 +567,26 @@ class BaseService {
             number: requestPayload.auth.secure,
             secretKey: requestPayload.transaction.app_info.extras.secret_key
         };
-        const identityResponse = {"status":"success","message":"Successful","responseCode":"00","data":{"birthcountry":"nigeria","birthdate":"17-05-1989","birthlga":"Mushin","birthstate":"Lagos","centralID":"12509455","educationallevel":"tertiary","email":"harunaadeola@gmail.com","emplymentstatus":"employed","firstname":"ADEOLA","gender":"f","heigth":"172","maritalstatus":"single","middlename":"RASHIDAT","nin":"11664993202","nok_address1":"****","nok_address2":"","nok_firstname":"****","nok_lga":"****","nok_middlename":"****","nok_postalcode":"****","nok_state":"****","nok_surname":"****","nok_town":"****","nspokenlang":"YORUBA","ospokenlang":"****","pfirstname":"****","photo":"","pmiddlename":"****","profession":"ENTREPRENEUR","psurname":"****","religion":"islam","residence_AdressLine1":"23 YUSUF STREET","residence_Town":"PAPA-AJAO","residence_lga":"Mushin","residence_state":"Lagos","residencestatus":"birth","self_origin_lga":"Ibeju/Lekki","self_origin_place":"****","self_origin_state":"Lagos","signature":"","surname":"HARUNA","telephoneno":"08062528182","title":"miss","trackingId":"S7Y0ORZQ90002X6"}}; 
-        //await payantIdentityApiCall(postDetails);
+        //const identityResponse = {"status":"success","message":"Successful","responseCode":"00","data":{"birthcountry":"nigeria","birthdate":"17-05-1989","birthlga":"Mushin","birthstate":"Lagos","centralID":"12509455","educationallevel":"tertiary","email":"harunaadeola@gmail.com","emplymentstatus":"employed","firstname":"ADEOLA","gender":"f","heigth":"172","maritalstatus":"single","middlename":"RASHIDAT","nin":"11664993202","nok_address1":"****","nok_address2":"","nok_firstname":"****","nok_lga":"****","nok_middlename":"****","nok_postalcode":"****","nok_state":"****","nok_surname":"****","nok_town":"****","nspokenlang":"YORUBA","ospokenlang":"****","pfirstname":"****","photo":"","pmiddlename":"****","profession":"ENTREPRENEUR","psurname":"****","religion":"islam","residence_AdressLine1":"23 YUSUF STREET","residence_Town":"PAPA-AJAO","residence_lga":"Mushin","residence_state":"Lagos","residencestatus":"birth","self_origin_lga":"Ibeju/Lekki","self_origin_place":"****","self_origin_state":"Lagos","signature":"","surname":"HARUNA","telephoneno":"08062528182","title":"miss","trackingId":"S7Y0ORZQ90002X6"}}; 
+        const identityResponse = await payantIdentityApiCall(postDetails,requestPayload);
         if (identityResponse.status != CONSTANTS.PAYANT_STATUS_TYPES.successful) {
             logger.error(`Identity pull request failed: ${identityResponse.message}`);
             throw new CustomerVerificationError(`Identity pull request failed: ${identityResponse.message}`);
         }
 
+        const ninResponse = mapMinNinResponse(identityResponse, orderReference, requestPayload.transaction);
         if (isOtpOverride) {
-            const transactionDetails = mapTransactionDetails(requestPayload.request_ref, requestPayload.transaction.transaction_ref, requestPayload, identityResponse, mapMinNinResponse(identityResponse, orderReference, requestPayload.transaction), CONSTANTS.REQUEST_TYPES.TRANSACT, orderReference, true, null);
+            const transactionDetails = mapTransactionDetails(requestPayload.request_ref, requestPayload.transaction.transaction_ref, requestPayload, identityResponse, ninResponse, CONSTANTS.REQUEST_TYPES.TRANSACT, orderReference, true, null);
             await new Transaction().createTransaction(transactionDetails);
-            const serviceResponse = mapMinNinResponse(identityResponse, orderReference, requestPayload.transaction);
             return {
-                ...serviceResponse,
+                ...ninResponse,
                 isOtpOverride: isOtpOverride
             };
         }
 
         
         const otp = generateOTP();
-        const transactionDetails = mapTransactionDetails(requestPayload.request_ref, requestPayload.transaction.transaction_ref, requestPayload, identityResponse, mapMinNinResponse(identityResponse, orderReference, requestPayload.transaction), CONSTANTS.REQUEST_TYPES.TRANSACT, orderReference, true, otp);
+        const transactionDetails = mapTransactionDetails(requestPayload.request_ref, requestPayload.transaction.transaction_ref, requestPayload, identityResponse, ninResponse, CONSTANTS.REQUEST_TYPES.TRANSACT, orderReference, true, otp);
         await new Transaction().createTransaction(transactionDetails);
 
         const smsData = {
@@ -595,9 +594,8 @@ class BaseService {
             recipientPhoneNumber: identityResponse.data.telephoneno,
             message: `Hello ${identityResponse.data.firstname}, here's the otp to validate fecthing your identity details: ${otp}.`
         };
-        console.log(smsData);
 
-        //await sendOTP(smsData);
+        await sendOTP(smsData);
         return {
             reference: orderReference,
             message: `${ResponseMessages.SUCCESSFULLY_SENT_OTP} ${hashPhoneNumber(requestPayload.transaction.customer.mobile_no)}`,
@@ -608,23 +606,27 @@ class BaseService {
     async lookupNinMidService(request) {
         const requestPayload = decryptData(request.data);
         const orderReference = generateRandomReference();
-        const isOtpOverride = (requestPayload.transaction.details.otp_override == true || (requestPayload.transaction.app_info && requestPayload.transaction.app_info.extras && requestPayload.transaction.app_info.extras.otp_override == true)) ? true : false;
+        const isOtpOverride = ((requestPayload.transaction.app_info && requestPayload.transaction.app_info.extras && requestPayload.transaction.app_info.extras.otp_override == "true")) ? true : false;
 
         if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.request_mode)) {
             logger.error('Route mode was not provided');
             throw new InvalidRequestModeError('Route mode was not provided');
         }
 
-        if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.VALIDATE) {
-            return await this.validateOtp(requestPayload);
+        if (requestPayload.request_mode == CONSTANTS.REQUEST_TYPES.VALIDATE) {
+            let resp = await this.validateOtp(requestPayload);
+            resp.isOtpOverride = true;
+            return resp;
         }
 
-        if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.QUERY) {
-            return await this.queryTransaction(requestPayload);
+        if (requestPayload.request_mode == CONSTANTS.REQUEST_TYPES.QUERY) {
+            let resp =  await this.queryTransaction(requestPayload);
+            resp.isOtpOverride = true;
+            return resp;
         }
 
         if ((requestPayload.transaction.mock_mode).toLowerCase() == CONSTANTS.MOCK_MODES.INSPECT) {
-            if (!requestPayload.auth.secure || !requestPayload.transaction.details || !requestPayload.request_type || !requestPayload.transaction.customer.customer_ref || !requestPayload.transaction.customer.firstname || !requestPayload.transaction.customer.surname) {
+            if (!requestPayload.auth.secure || !requestPayload.request_type || !requestPayload.transaction.customer.customer_ref || !requestPayload.transaction.customer.firstname || !requestPayload.transaction.customer.surname) {
                 logger.error('Incomplete options request - Required parameters: [auth.secure, request_type, customer_ref, amount, firstname, lastname]');
                 throw new InvalidParamsError('Incomplete options request - Required parameters: [request_type, customer_ref, amount, firstname, lastname]');
             } else {
@@ -652,7 +654,8 @@ class BaseService {
             number: requestPayload.auth.secure,
             secretKey: requestPayload.transaction.app_info.extras.secret_key
         };
-        const identityResponse = await payantIdentityApiCall(postDetails);
+        //const identityResponse = {"status":"success","message":"Successful","responseCode":"00","data":{"birthcountry":"nigeria","birthdate":"17-05-1989","birthlga":"Mushin","birthstate":"Lagos","centralID":"12509455","educationallevel":"tertiary","email":"harunaadeola@gmail.com","emplymentstatus":"employed","firstname":"ADEOLA","gender":"f","heigth":"172","maritalstatus":"single","middlename":"RASHIDAT","nin":"11664993202","nok_address1":"****","nok_address2":"","nok_firstname":"****","nok_lga":"****","nok_middlename":"****","nok_postalcode":"****","nok_state":"****","nok_surname":"****","nok_town":"****","nspokenlang":"YORUBA","ospokenlang":"****","pfirstname":"****","photo":"","pmiddlename":"****","profession":"ENTREPRENEUR","psurname":"****","religion":"islam","residence_AdressLine1":"23 YUSUF STREET","residence_Town":"PAPA-AJAO","residence_lga":"Mushin","residence_state":"Lagos","residencestatus":"birth","self_origin_lga":"Ibeju/Lekki","self_origin_place":"****","self_origin_state":"Lagos","signature":"","surname":"HARUNA","telephoneno":"08062528182","title":"miss","trackingId":"S7Y0ORZQ90002X6"}}; 
+        const identityResponse = await payantIdentityApiCall(postDetails,requestPayload);
 
         if (identityResponse.status != CONSTANTS.PAYANT_STATUS_TYPES.successful) {
             logger.error(`Identity pull request failed: ${identityResponse.message}`);
@@ -661,7 +664,7 @@ class BaseService {
 
         if (isOtpOverride) {
             const transactionDetails = mapTransactionDetails(requestPayload.request_ref, requestPayload.transaction.transaction_ref, requestPayload, identityResponse, mapMidNinResponse(identityResponse, orderReference), CONSTANTS.REQUEST_TYPES.TRANSACT, orderReference, true, null);
-            await this.storeTransaction(transactionDetails);
+            await new Transaction().createTransaction(transactionDetails);
             const serviceResponse = mapMidNinResponse(identityResponse);
             return {
                 ...serviceResponse,
@@ -670,7 +673,7 @@ class BaseService {
         }
 
         const otp = generateOTP();
-        const transactionDetails = mapTransactionDetails(requestPayload.request_ref, requestPayload.transaction.transaction_ref, requestPayload, identityResponse, mapMinNinResponse(identityResponse, orderReference), CONSTANTS.REQUEST_TYPES.TRANSACT, orderReference, true, otp);
+        const transactionDetails = mapTransactionDetails(requestPayload.request_ref, requestPayload.transaction.transaction_ref, requestPayload, identityResponse, mapMidNinResponse(identityResponse, orderReference), CONSTANTS.REQUEST_TYPES.TRANSACT, orderReference, true, otp);
         await new Transaction().createTransaction(transactionDetails);
 
         const smsData = {
@@ -678,7 +681,6 @@ class BaseService {
             recipientPhoneNumber: requestPayload.transaction.customer.mobile_no,
             message: `Hello ${requestPayload.transaction.customer.surname}, here's the otp to validate fecthing your identity details: ${otp}. Please contact us if you did not initiate this request`
         };
-
         await sendOTP(smsData);
         return {
             reference: orderReference,
@@ -693,34 +695,30 @@ class BaseService {
             throw new InvalidParamsError(`Required parameter otp and transaction reference`);
         }
 
-        const transaction = new Transaction().fetchTransactionByOrderRef(requestPayload.transaction.transaction_ref);
-
+        const transaction = await new Transaction().fetchTransactionByReference(requestPayload.transaction.transaction_ref);
         if (requestPayload.auth.secure != transaction.otp) {
             logger.error('Invalid otp was provided');
             throw new InvalidOtpError(`Invalid otp`);
         }
-        
-        return JSON.parse(transaction.provider_response);
+        return JSON.parse(transaction.mappedResponse);
     }
 
 
     async queryTransactionBuilder(requestPayload, transactionData) {
-        const fetchedTransaction = null;
-        const transaction = await new Transaction().fetchTransactionByReference(transactionData);
-        if (transaction.providerResponse !== 'success') {
+        let fetchedTransaction = null;
+        const transaction = await new Transaction().fetchTransactionByReference(transactionData.onepipeTransactionRef);
+        let providerResponse = JSON.parse(transaction.providerResponse);
+        if (providerResponse.status !== 'success') {
             if ((requestPayload.auth && requestPayload.auth.secure == ';') && (!requestPayload.transaction.app_info || !requestPayload.transaction.app_info.extras || requestPayload.transaction.app_info.extras.phone_number == '')) {
                 logger.error('Invalid authentication details - No authentication detail');
                 throw new AutheticationError(ResponseMessages.NO_AUTH_DETAILS_PROVIDED);
             }
-
             const authUserData = await authUser(requestPayload);
             const payantFetchedTransaction = getTransactionStatus(authUserData.token, transaction.providerTransactionRef);
-
             fetchedTransaction = payantFetchedTransaction.data.response_payload.data.msg.results;
         } else {
             fetchedTransaction = JSON.parse(transaction.mappedResponse);
         }
-
         return fetchedTransaction;
     }
 

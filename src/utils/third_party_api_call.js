@@ -112,19 +112,25 @@ function payantIdentityApiCall(payantRequestPayload, onePipeRequestPayload) {
         }
     };
     requestHeaders.headers['Content-Type'] = 'application/json';
-
+    const apiLoggerRequest = {
+        ...onePipeRequestPayload,
+        body: payantRequestPayload,
+        headers: requestHeaders,
+        transaction_time: now().toISOString(),
+        destination_url: `${config.payant_identity_verification_base_url}/verification`,
+        request_description: "NIN Call to Payant"
+    };
     return axios.post(`${config.payant_identity_verification_base_url}/verification`, payantRequestPayload, requestHeaders)
     .then(async (response) => {
-        const apiLoggerRequest = {
-            ...onePipeRequestPayload,
-            body: payantRequestPayload,
-            headers: requestHeaders,
-            transactio_time: now().toISOString(),
-        }
+        //Clear Long Base64 string for image data
+        response.data.data.photo = "";
+        response.data.data.signature = "";
         await apiLogger(mapAPILogger(apiLoggerRequest, response));
         return response.data
     })
-    .catch(function (err) {
+    .catch(async function (err) {
+        err.response.data = null;
+        await apiLogger(mapAPILogger(apiLoggerRequest, err.response));
         logger.error(`Error occurred on payant identity call: ${err.message}`);
         throw err;
     })

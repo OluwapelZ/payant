@@ -53,14 +53,14 @@ const camelCaseObjectMap = (modelObject, mapFn) => {
         if(value && typeof value == 'object' && Object.keys(value).length){
             value = camelCaseObjectMap(value, mapFn);
         }
-        result[camelCase(key)] = value;
+        result[lodash.camelCase(key)] = value;
 
         return result;
     }, {});
 };
 
 function matchString(onsiteString, remoteString) {
-    return (onsiteString === remoteString) ? true : false;
+    return onsiteString ? ((onsiteString.toLocaleLowerCase() === remoteString.toLocaleLowerCase()) ? true : false) : false;
 }
 
 module.exports = { generateOTP, generateRandomReference, hashPhoneNumber, snakeCaseObjectMap, camelCaseObjectMap, now, matchString };

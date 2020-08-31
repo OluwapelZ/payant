@@ -207,24 +207,36 @@ function mapScratchCardResponse(responsePayload, orderReference, isMock=false) {
 }
 
 function mapMinNinResponse(identityResponse, orderReference, transactionRequestPayload, isMock=false) {
-    return {
+    //Map Payant DOB's (DD-MM-YYYY) to Onepipe's format (YYYY-MM-DD);
+
+    let splittedDate = identityResponse.data.birthdate ? identityResponse.data.birthdate.split('-') : [] ;
+    let reverseDate = splittedDate.reverse().join('-');     
+    var onePipeResponse =  {
         provider_response_code: "00",
         provider: config.provider_name,
         errors: null,
         error: null,
         provider_response: {
             nin: isMock ? "123456789" : identityResponse.data.nin,
-            first_name: isMock ? true : matchString(transactionRequestPayload.customer.firstname, identityResponse.data.firstname),
+            first_name: isMock ? true : matchString(transactionRequestPayload.details.first_name, identityResponse.data.firstname),
             middle_name: isMock ? true : matchString(transactionRequestPayload.details.middle_name, identityResponse.data.middlename),
-            last_name: isMock ? true : matchString(transactionRequestPayload.customer.lastname, identityResponse.data.surname),
-            dob: isMock ? true : matchString(transactionRequestPayload.details.dob, identityResponse.data.birthdate),
+            last_name: isMock ? true : matchString(transactionRequestPayload.details.last_name, identityResponse.data.surname),
+            dob: isMock ? true : matchString(transactionRequestPayload.details.dob, reverseDate),
             reference: isMock ? "N123456789MIOL" : orderReference,
             meta: {}
         }
     };
+    var providerResponseProps = ["dob","first_name","last_name","middle_name"]
+    providerResponseProps.forEach(prop => {
+        if(!transactionRequestPayload.details[prop])
+         delete  onePipeResponse.provider_response[prop]
+    })
+    return onePipeResponse;
 }
 
 function mapMidNinResponse(identityResponse, orderReference, isMock=false) {
+    let splittedDate = identityResponse.data.birthdate ? identityResponse.data.birthdate.split('-') : [] ;
+    let reverseDate = splittedDate.reverse().join('-');     
     return {
         provider_response_code: "00",
         provider: config.provider_name,
@@ -235,10 +247,10 @@ function mapMidNinResponse(identityResponse, orderReference, isMock=false) {
             first_name: isMock ? "Luther" : identityResponse.data.firstname,
             middle_name:  isMock ? "King" : identityResponse.data.middlename,
             last_name: isMock ? "Martin" : identityResponse.data.surname,
-            dob: isMock ? "25AD" : identityResponse.data.birthdate,
+            dob: isMock ? "05-05-2000" : reverseDate,
             phone_number1: isMock ? "+2340000000000" : identityResponse.data.telephoneno,
             phone_number2: "",
-            reference: orderReference,
+            reference: isMock ? "PAYANT06879678" :orderReference,
             meta: {}
         }
     }
@@ -246,12 +258,12 @@ function mapMidNinResponse(identityResponse, orderReference, isMock=false) {
 
 function mapAPILogger(requestPayload, responsePayload) {
     return {
-        platform: "Payant",
+        platform: "Onepipe",
         client: {
             client_id: requestPayload.transaction.client_info.id,
             client_name: requestPayload.transaction.client_info.name,
             client_app_id: requestPayload.transaction.app_info.id,
-            client_app_name: requestPayload.transaction.app_info.id,
+            client_app_name: requestPayload.transaction.app_info.name,
         },
         transaction: {
             transaction_ref: requestPayload.transaction.transaction_ref,
@@ -260,17 +272,17 @@ function mapAPILogger(requestPayload, responsePayload) {
         request: {
             source_name: "Onepipe payant integration",
             destination_name: "Payant",
-            request_type: "service name",
+            request_type: requestPayload.request_type,
             request_timestamp: now().toISOString(),
-            request_description: "",
-            destination_url: "",
+            request_description: requestPayload.request_description,
+            destination_url: requestPayload.destination_url,
             request_headers: requestPayload.headers,
             request_body: requestPayload.body
         },
         response: {
             response_timestamp: now().toISOString(),
-            response_http_status: responsePayload.statusText,
-            response_code: responsePayload.status,
+            response_http_status: responsePayload.status,
+            response_code: responsePayload.statusText,
             response_headers: responsePayload.headers,
             response_body: responsePayload.data
         }
