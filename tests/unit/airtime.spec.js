@@ -1,6 +1,6 @@
 const Transaction = require('../../src/models/transaction');
 const BaseService = require('../../src/services/base');
-const { InvalidParamsError, InvalidRequestModeError, BillerNotSupportedError, ServiceNotImplementedError } = require('../../src/error/index');
+const { InvalidParamsError, BillerNotSupportedError } = require('../../src/error/index');
 const { payantServiceApiCall } = require('../../src/utils/third_party_api_call');
 const { invalidData } = require('../fixtures/airtime');
 
@@ -22,9 +22,9 @@ describe('Airtime Service', () => {
         done();
     });
 
-    it('should throw error when request type is not buy_airtime', async (done) => {
+    it('should throw error when request type is not buy airtime', async (done) => {
         const requestPayload = Object.assign({}, invalidData);
-        requestPayload.auth.route_mode = 'transact';
+        requestPayload.request_mode = 'transact';
         requestPayload.request_type = 'not_implemented';
         requestPayload.transaction.details.order_reference = 'sdfdsf';
         try {
@@ -39,16 +39,14 @@ describe('Airtime Service', () => {
 
     it('should throw error if provider does not support the provided telco_code', async (done) => {
         const requestPayload = Object.assign({}, invalidData);
-        requestPayload.auth.route_mode = 'transact';
-        const fetchTransactionByRefMock = (Transaction.prototype.fetchTransactionByOrderRef = jest.fn());
-        requestPayload.request_type = 'buy_airtime';
+        requestPayload.request_mode = 'transact';
+        requestPayload.request_type = 'buy airtime';
         requestPayload.transaction.details.telco_code = 'invalid_telco_code';
         requestPayload.transaction.details.order_reference = 'sfsfsdf';
         try {
             await baseService.buyAirtimeService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
             done()
         } catch (error) {
-            expect(fetchTransactionByRefMock).toHaveBeenCalled();
             expect(error instanceof BillerNotSupportedError).toBe(true);
             done();
         }
@@ -56,9 +54,8 @@ describe('Airtime Service', () => {
 
     it('should throw error if customer reference(phone number) or amount is missing', async (done) => {
         const requestPayload = Object.assign({}, invalidData);
-        const fetchTransactionByRefMock = (Transaction.prototype.fetchTransactionByOrderRef = jest.fn());
-        requestPayload.auth.route_mode = 'transact';
-        requestPayload.request_type = 'buy_airtime';
+        requestPayload.request_mode = 'transact';
+        requestPayload.request_type = 'buy airtime';
         requestPayload.transaction.details.telco_code = 'Glo';
         delete requestPayload.transaction.amount;
         delete requestPayload.transaction.customer.customer_ref
@@ -66,7 +63,6 @@ describe('Airtime Service', () => {
             await baseService.buyAirtimeService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
             done();
         } catch (error) {
-            expect(fetchTransactionByRefMock).toHaveBeenCalled();
             expect(error instanceof InvalidParamsError).toBe(true);
             done();
         }
@@ -74,16 +70,14 @@ describe('Airtime Service', () => {
 
     it('should successfully buy airtime', async (done) => {
         const requestPayload = Object.assign({}, invalidData);
-        const fetchTransactionByRefMock = (Transaction.prototype.fetchTransactionByOrderRef = jest.fn());
-        requestPayload.auth.route_mode = 'transact';
-        requestPayload.request_type = 'buy_airtime';
+        requestPayload.request_mode = 'transact';
+        requestPayload.request_type = 'buy airtime';
         requestPayload.transaction.details.telco_code = 'Glo';
         requestPayload.transaction.amount = 1000;
         requestPayload.transaction.customer.customer_ref = '09056351003'
         try {
             await baseService.buyAirtimeService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
 
-            expect(fetchTransactionByRefMock).toHaveBeenCalled();
             expect(payantServiceApiCall).toHaveBeenCalled();
             done();
         } catch (error) {

@@ -21,7 +21,7 @@ describe('Product Listing', () => {
     describe('Airtime production listing', () => {
         it('should throw error if details object was not sent with request payload', async (done) => {
             const requestPayload = Object.assign({}, invalidData);
-            requestPayload.auth.route_mode = 'options';
+            requestPayload.request_mode = 'options';
             delete requestPayload.transaction.details;
             try {
                 await baseService.buyAirtimeService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
@@ -33,7 +33,7 @@ describe('Product Listing', () => {
     
         it('should throw error if provider does not support the provided biller', async (done) => {
             const requestPayload = Object.assign({}, invalidData);
-            requestPayload.auth.route_mode = 'options';
+            requestPayload.request_mode = 'options';
             requestPayload.transaction.details = {
                 biller_id: 'cuptv'
             }
@@ -48,7 +48,7 @@ describe('Product Listing', () => {
         it('should throw error when payant returns error', async (done) => {
             listServiceProductsAPI.mockResolvedValue({status: 'error'});
             const requestPayload = Object.assign({}, invalidData);
-            requestPayload.auth.route_mode = 'options';
+            requestPayload.request_mode = 'options';
             requestPayload.transaction.details = {
                 biller_id: 'dstv'
             }
@@ -65,7 +65,7 @@ describe('Product Listing', () => {
             listServiceProductsAPI.mockResolvedValue(optionsProviderResponse);
             const createTransactionMock = (Transaction.prototype.createTransaction = jest.fn());
             const requestPayload = Object.assign({}, invalidData);
-            requestPayload.auth.route_mode = 'options';
+            requestPayload.request_mode = 'options';
             requestPayload.transaction.transaction_ref = '2kjoijodjfsdf';
             requestPayload.transaction.details = {
                 biller_id: 'dstv'
@@ -80,7 +80,7 @@ describe('Product Listing', () => {
     describe('Data production listing', () => {
         it('should throw error if details object was not sent with request payload', async (done) => {
             const requestPayload = Object.assign({}, invalidData);
-            requestPayload.auth.route_mode = 'options';
+            requestPayload.request_mode = 'options';
             delete requestPayload.transaction.details;
             try {
                 await baseService.buyDataService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
@@ -92,7 +92,7 @@ describe('Product Listing', () => {
     
         it('should throw error if provider does not support the provided biller', async (done) => {
             const requestPayload = Object.assign({}, invalidData);
-            requestPayload.auth.route_mode = 'options';
+            requestPayload.request_mode = 'options';
             requestPayload.transaction.details = {
                 biller_id: 'cuptv'
             }
@@ -107,7 +107,7 @@ describe('Product Listing', () => {
         it('should throw error when payant returns error', async (done) => {
             listServiceProductsAPI.mockResolvedValue({status: 'error'});
             const requestPayload = Object.assign({}, invalidData);
-            requestPayload.auth.route_mode = 'options';
+            requestPayload.request_mode = 'options';
             requestPayload.transaction.details = {
                 biller_id: 'dstv'
             }
@@ -124,7 +124,7 @@ describe('Product Listing', () => {
             listServiceProductsAPI.mockResolvedValue(optionsProviderResponse);
             const createTransactionMock = (Transaction.prototype.createTransaction = jest.fn());
             const requestPayload = Object.assign({}, invalidData);
-            requestPayload.auth.route_mode = 'options';
+            requestPayload.request_mode = 'options';
             requestPayload.transaction.transaction_ref = '2kjoijodjfsdf';
             requestPayload.transaction.details = {
                 biller_id: 'dstv'
@@ -139,7 +139,7 @@ describe('Product Listing', () => {
     describe('Electricity production listing', () => {
         it('should throw error if details object was not sent with request payload', async (done) => {
             const requestPayload = Object.assign({}, invalidData);
-            requestPayload.auth.route_mode = 'options';
+            requestPayload.request_mode = 'options';
             delete requestPayload.transaction.details;
             try {
                 await baseService.buyElectricityService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
@@ -151,7 +151,7 @@ describe('Product Listing', () => {
     
         it('should throw error if provider does not support the provided biller', async (done) => {
             const requestPayload = Object.assign({}, invalidData);
-            requestPayload.auth.route_mode = 'options';
+            requestPayload.request_mode = 'options';
             requestPayload.transaction.details = {
                 biller_id: 'cuptv'
             }
@@ -166,7 +166,7 @@ describe('Product Listing', () => {
         it('should throw error when payant returns error', async (done) => {
             listServiceProductsAPI.mockResolvedValue({status: 'error'});
             const requestPayload = Object.assign({}, invalidData);
-            requestPayload.auth.route_mode = 'options';
+            requestPayload.request_mode = 'options';
             requestPayload.transaction.details = {
                 biller_id: 'dstv'
             }
@@ -183,7 +183,7 @@ describe('Product Listing', () => {
             listServiceProductsAPI.mockResolvedValue(optionsProviderResponse);
             const createTransactionMock = (Transaction.prototype.createTransaction = jest.fn());
             const requestPayload = Object.assign({}, invalidData);
-            requestPayload.auth.route_mode = 'options';
+            requestPayload.request_mode = 'options';
             requestPayload.transaction.transaction_ref = '2kjoijodjfsdf';
             requestPayload.transaction.details = {
                 biller_id: 'dstv'
@@ -198,7 +198,7 @@ describe('Product Listing', () => {
     describe('Tv production listing', () => {
         it('should throw error if details object was not sent with request payload', async (done) => {
             const requestPayload = Object.assign({}, invalidData);
-            requestPayload.auth.route_mode = 'options';
+            requestPayload.request_mode = 'options';
             delete requestPayload.transaction.details;
             try {
                 await baseService.buyElectricityService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
@@ -210,7 +210,7 @@ describe('Product Listing', () => {
     
         it('should throw error if provider does not support the provided biller', async (done) => {
             const requestPayload = Object.assign({}, invalidData);
-            requestPayload.auth.route_mode = 'options';
+            requestPayload.request_mode = 'options';
             requestPayload.transaction.details = {
                 biller_id: 'cuptv'
             }
@@ -225,7 +225,7 @@ describe('Product Listing', () => {
         it('should throw error when payant returns error', async (done) => {
             listServiceProductsAPI.mockResolvedValue({status: 'error'});
             const requestPayload = Object.assign({}, invalidData);
-            requestPayload.auth.route_mode = 'options';
+            requestPayload.request_mode = 'options';
             requestPayload.transaction.details = {
                 biller_id: 'dstv'
             }
@@ -242,7 +242,7 @@ describe('Product Listing', () => {
             listServiceProductsAPI.mockResolvedValue(optionsProviderResponse);
             const createTransactionMock = (Transaction.prototype.createTransaction = jest.fn());
             const requestPayload = Object.assign({}, invalidData);
-            requestPayload.auth.route_mode = 'options';
+            requestPayload.request_mode = 'options';
             requestPayload.transaction.transaction_ref = '2kjoijodjfsdf';
             requestPayload.transaction.details = {
                 biller_id: 'dstv'
@@ -256,7 +256,7 @@ describe('Product Listing', () => {
 
     describe('Scratch Card production listing', () => {it('should throw error if details object was not sent with request payload', async (done) => {
             const requestPayload = Object.assign({}, invalidData);
-            requestPayload.auth.route_mode = 'options';
+            requestPayload.request_mode = 'options';
             delete requestPayload.transaction.details;
             try {
                 await baseService.buyScratchCardService({data: requestPayload, token: '23423jiu98ipajhiufhi27yf0ayfdhvzbONDUFHuiwrfa-sdfuiwer'})
@@ -268,7 +268,7 @@ describe('Product Listing', () => {
     
         it('should throw error if provider does not support the provided biller', async (done) => {
             const requestPayload = Object.assign({}, invalidData);
-            requestPayload.auth.route_mode = 'options';
+            requestPayload.request_mode = 'options';
             requestPayload.transaction.details = {
                 biller_id: 'cuptv'
             }
@@ -283,7 +283,7 @@ describe('Product Listing', () => {
         it('should throw error when payant returns error', async (done) => {
             listServiceProductsAPI.mockResolvedValue({status: 'error'});
             const requestPayload = Object.assign({}, invalidData);
-            requestPayload.auth.route_mode = 'options';
+            requestPayload.request_mode = 'options';
             requestPayload.transaction.details = {
                 biller_id: 'dstv'
             }
@@ -300,7 +300,7 @@ describe('Product Listing', () => {
             listServiceProductsAPI.mockResolvedValue(optionsProviderResponse);
             const createTransactionMock = (Transaction.prototype.createTransaction = jest.fn());
             const requestPayload = Object.assign({}, invalidData);
-            requestPayload.auth.route_mode = 'options';
+            requestPayload.request_mode = 'options';
             requestPayload.transaction.transaction_ref = '2kjoijodjfsdf';
             requestPayload.transaction.details = {
                 biller_id: 'dstv'

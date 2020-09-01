@@ -121,11 +121,11 @@ function mapAirtimeResponse(responsePayload, amount, orderRef, isMock=false) {
         errors: null,
         error: null,
         provider_response: {
-            payment_status: "Successful",
-            fulfillment_status: "Processing",
-            transaction_final_amount: (isMock) ? "0.00" : (Number(amount) * 100), //In kobo
+            payment_status: responsePayload.transactionStatus,
+            fulfillment_status: responsePayload.status,
+            transaction_final_amount: (isMock) ? "0.00" : amount,
             transaction_fee: "0.00",
-            narration: (isMock) ? " " : (responsePayload.text) ? responsePayload.text : "",
+            narration: (isMock) ? " " : `${responsePayload._service_category.name}: ${amount}, ${responsePayload.status}`,
             reference: isMock ? "mockReference" : orderRef,
             "meta":{}
         }

@@ -32,7 +32,7 @@ const config = {
         buy_airtime: {
             aritel: process.env.AIRTEL,
             mtn: process.env.MTN,
-            Glo: process.env.GLO,
+            glo: process.env.GLO,
             "9mobile": process.env.NINE_MOBILE,
         },
         pay_electricity: {

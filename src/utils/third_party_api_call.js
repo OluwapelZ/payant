@@ -89,7 +89,7 @@ function payantServiceApiCall(token, url_path, payantRequestPayload, onePipeRequ
             ...onePipeRequestPayload,
             body: payantRequestPayload,
             headers: requestHeaders,
-            transactio_time: now().toISOString(),
+            transaction_time: now().toISOString(),
         }
         await apiLogger(mapAPILogger(apiLoggerRequest, response));
         return (typeof callback !== 'undefined') ? callback(response.data) : response.data}

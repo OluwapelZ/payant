@@ -24,7 +24,7 @@ describe('Data Service', () => {
 
     it('should throw error if biller or biller item id is not passed', async (done) => {
         const requestPayload = Object.assign({}, invalidData);
-        requestPayload.auth.route_mode = 'transact';
+        requestPayload.request_mode = 'transact';
         const fetchTransactionByRefMock = (Transaction.prototype.fetchTransactionByOrderRef = jest.fn());
         requestPayload.request_type = 'buy_data';
         requestPayload.transaction.details.biller_id = 'Smile';
@@ -41,7 +41,7 @@ describe('Data Service', () => {
 
     it('should throw error if buy_data service does not support biller', async (done) => {
         const requestPayload = Object.assign({}, invalidData);
-        requestPayload.auth.route_mode = 'transact';
+        requestPayload.request_mode = 'transact';
         const fetchTransactionByRefMock = (Transaction.prototype.fetchTransactionByOrderRef = jest.fn());
         requestPayload.request_type = 'buy_data';
         requestPayload.transaction.details.biller_id = 'invalid_biller';
@@ -59,7 +59,7 @@ describe('Data Service', () => {
 
     it('should throw error if customer ref or amount is not passed', async (done) => {
         const requestPayload = Object.assign({}, invalidData);
-        requestPayload.auth.route_mode = 'transact';
+        requestPayload.request_mode = 'transact';
         const fetchTransactionByRefMock = (Transaction.prototype.fetchTransactionByOrderRef = jest.fn());
         requestPayload.request_type = 'buy_data';
         requestPayload.transaction.details.biller_id = 'Smile';
@@ -79,7 +79,7 @@ describe('Data Service', () => {
 
     it('should successfully call buy data from payant', async (done) => {
         const requestPayload = Object.assign({}, invalidData);
-        requestPayload.auth.route_mode = 'transact';
+        requestPayload.request_mode = 'transact';
         const fetchTransactionByRefMock = (Transaction.prototype.fetchTransactionByOrderRef = jest.fn());
         requestPayload.request_type = 'buy_data';
         requestPayload.transaction.details.biller_id = 'Smile';

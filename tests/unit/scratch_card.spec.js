@@ -24,7 +24,7 @@ describe('Scratch Card Service', () => {
 
     it('should throw error if biller id is not passed', async (done) => {
         const requestPayload = Object.assign({}, invalidData);
-        requestPayload.auth.route_mode = 'transact';
+        requestPayload.request_mode = 'transact';
         const fetchTransactionByRefMock = (Transaction.prototype.fetchTransactionByOrderRef = jest.fn());
         requestPayload.request_type = 'buy_scratch_card';
         delete requestPayload.transaction.details.biller_id;
@@ -41,7 +41,7 @@ describe('Scratch Card Service', () => {
 
     it('should throw error if service does not currently support biller', async (done) => {
         const requestPayload = Object.assign({}, invalidData);
-        requestPayload.auth.route_mode = 'transact';
+        requestPayload.request_mode = 'transact';
         const fetchTransactionByRefMock = (Transaction.prototype.fetchTransactionByOrderRef = jest.fn());
         requestPayload.request_type = 'buy_scratch_card';
         requestPayload.transaction.details.biller_id = 'invalid_tv';
@@ -58,7 +58,7 @@ describe('Scratch Card Service', () => {
 
     it('should throw error when amount is not provided', async (done) => {
         const requestPayload = Object.assign({}, invalidData);
-        requestPayload.auth.route_mode = 'transact';
+        requestPayload.request_mode = 'transact';
         const fetchTransactionByRefMock = (Transaction.prototype.fetchTransactionByOrderRef = jest.fn());
         requestPayload.request_type = 'buy_scratch_card';
         requestPayload.transaction.details.biller_id = 'waec_scratch_card';
@@ -76,7 +76,7 @@ describe('Scratch Card Service', () => {
 
     // it('should successfully purchase waec scratch card', async (done) => {
     //     const requestPayload = Object.assign({}, invalidData);
-    //     requestPayload.auth.route_mode = 'transact';
+    //     requestPayload.request_mode = 'transact';
     //     const fetchTransactionByRefMock = (Transaction.prototype.fetchTransactionByOrderRef = jest.fn());
     //     requestPayload.request_type = 'buy_scratch_card';
     //     requestPayload.transaction.details.biller_id = 'waec_scratch_card';

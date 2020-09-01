@@ -19,7 +19,7 @@ const CONSTANTS = {
         PAY_ELECTRICITY: 'pay_electricity',
         NIN_MID: 'lookup_nin_mid',
         NIN_MIN: 'lookup_nin_min',
-        BUY_AIRTIME: 'buy_airtime',
+        BUY_AIRTIME: 'buy airtime',
         BUY_DATA: 'buy_data',
         BUY_SCRATCH_CARD: 'buy_scratch_card'
     },

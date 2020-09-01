@@ -24,7 +24,7 @@ describe('Electricity Service', () => {
 
     it('should throw error if biller id is not provided', async (done) => {
         const requestPayload = Object.assign({}, invalidData);
-        requestPayload.auth.route_mode = 'transact';
+        requestPayload.request_mode = 'transact';
         const fetchTransactionByRefMock = (Transaction.prototype.fetchTransactionByOrderRef = jest.fn());
         requestPayload.request_type = 'pay_electricity';
         requestPayload.transaction.details.biller_id = null;
@@ -41,7 +41,7 @@ describe('Electricity Service', () => {
 
     it('should throw error if service buy_electricity does not support biller', async (done) => {
         const requestPayload = Object.assign({}, invalidData);
-        requestPayload.auth.route_mode = 'transact';
+        requestPayload.request_mode = 'transact';
         const fetchTransactionByRefMock = (Transaction.prototype.fetchTransactionByOrderRef = jest.fn());
         requestPayload.request_type = 'pay_electricity';
         requestPayload.transaction.details.biller_id = 'invalid_biller';
@@ -58,7 +58,7 @@ describe('Electricity Service', () => {
 
     it('should throw error when customer verification is not successful', async (done) => {
         const requestPayload = Object.assign({}, invalidData);
-        requestPayload.auth.route_mode = 'transact';
+        requestPayload.request_mode = 'transact';
         const fetchTransactionByRefMock = (Transaction.prototype.fetchTransactionByOrderRef = jest.fn());
         requestPayload.request_type = 'pay_electricity';
         requestPayload.transaction.details.biller_id = 'IKEDCPR';
@@ -76,7 +76,7 @@ describe('Electricity Service', () => {
 
     it('should throw error when customer ref, amount or mobile number is not passed', async (done) => {
         const requestPayload = Object.assign({}, invalidData);
-        requestPayload.auth.route_mode = 'transact';
+        requestPayload.request_mode = 'transact';
         requestPayload.request_type = 'pay_electricity';
         requestPayload.transaction.details.biller_id = 'IKEDCPR';
         requestPayload.transaction.details.order_reference = 'sfsfsdf';
@@ -92,7 +92,7 @@ describe('Electricity Service', () => {
 
     it('should successfully purchase electricity', async (done) => {
         const requestPayload = Object.assign({}, invalidData);
-        requestPayload.auth.route_mode = 'transact';
+        requestPayload.request_mode = 'transact';
         const fetchTransactionByRefMock = (Transaction.prototype.fetchTransactionByOrderRef = jest.fn());
         requestPayload.request_type = 'pay_electricity';
         requestPayload.transaction.details.biller_id = 'IKEDCPR';

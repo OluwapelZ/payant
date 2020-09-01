@@ -13,7 +13,7 @@ const {
 } = require('../utils/mapper');
 const {
     InvalidRequestModeError, BillerProductError, ServiceProductCategoryError, BillerNotSupportedError,
-    ServiceNotImplementedError, InvalidParamsError, ProviderResponseError, CustomerVerificationError,
+    InvalidParamsError, ProviderResponseError, CustomerVerificationError,
     InvalidOtpError, AutheticationError
 } = require('../error');
 const { authUser } = require('../middleware/auth');
@@ -71,7 +71,7 @@ class BaseService {
     }
 
     async listProviderServices(request, token) {
-        if (request.auth.route_mode != CONSTANTS.REQUEST_TYPES.OPTIONS) {
+        if (request.request_mode != CONSTANTS.REQUEST_TYPES.OPTIONS) {
             logger.error('Request mode has to be passed as options to make an option call');
             throw new InvalidRequestModeError('Request mode has to be passed as options to make an option call');
         }
@@ -97,7 +97,7 @@ class BaseService {
             throw new BillerNotSupportedError(`Provider does not support "${request.transaction.details.biller_id}" biller`);
         }
 
-        if (['pay_tv'].includes(request.request_type)) { //verify customer's unique number with biller
+        if (['pay_tv'].includes(request.request_type)) {
             if (!request.transaction.customer.customer_ref) {
                 logger.error(`Missing parameter customer_ref for service "${request.request_type}"`);
                 throw new CustomerVerificationError(`Missing parameter customer_ref for service "${request.request_type}"`);
@@ -107,7 +107,7 @@ class BaseService {
             if (verifyCustomer.status != CONSTANTS.PAYANT_STATUS_TYPES.successful) {
                 logger.error(`Customer unique reference verification with biller ${request.transaction.details.biller_id} failed: ${verifyCustomer.message}`);
                 throw new CustomerVerificationError(`Customer unique reference verification with biller ${request.transaction.details.biller_id} failed: ${verifyCustomer.message}`);
-            } // Continue with product listing if verification was successful
+            }
         }
 
         const services = await listServiceProductsAPI(token, billerId, (request.transaction.customer.customer_ref) ? request.transaction.customer.customer_ref : null);
@@ -130,16 +130,16 @@ class BaseService {
         const requestPayload = request.data;
         const token = request.token;
 
-        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.auth.route_mode)) {
+        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.request_mode)) {
             logger.error('Invalid request mode was provided');
             throw new InvalidRequestModeError('Invalid request mode was provided');
         }
 
-        if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.QUERY) {
+        if (requestPayload.request_mode == CONSTANTS.REQUEST_TYPES.QUERY) {
             return await this.queryTransaction(requestPayload);
         }
 
-        if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.OPTIONS) {
+        if (requestPayload.request_mode == CONSTANTS.REQUEST_TYPES.OPTIONS) {
             return await this.listProviderServices(requestPayload, token);
         }
 
@@ -157,18 +157,12 @@ class BaseService {
             throw new InvalidParamsError('Request type has be to passed as buy_airtime ');
         }
 
-        if (!requestPayload.transaction.details.order_reference) {
-            logger.error('Order Reference is a required param for transact calls.');
-            throw new InvalidParamsError('Order Reference is a required param for transact calls.');
-        }
-        await new Transaction().fetchTransactionByOrderRef(requestPayload.transaction.details.order_reference); // Fetch active transaction by order refrence
-
         if(!requestPayload.transaction.details || !requestPayload.transaction.details.telco_code) {
             logger.error(`Telco code (biller id) has to be passed in details object nested in transaction object`);
             throw new InvalidParamsError('Biller id (telco_code) is not provided');
         }
 
-        if(!config.service_biller_ids.buy_airtime.hasOwnProperty(requestPayload.transaction.details.telco_code)) {
+        if(!config.service_biller_ids.buy_airtime.hasOwnProperty((requestPayload.transaction.details.telco_code).toLowerCase())) {
             logger.error(`Service "buy_airtime" does not support biller: ${requestPayload.transaction.details.telco_code}`);
             throw new BillerNotSupportedError(`Biller ${requestPayload.transaction.details.telco_code} is not supported by service buy_airtime`)
         }
@@ -180,19 +174,19 @@ class BaseService {
 
         const postDetails = {
             amount: requestPayload.transaction.amount,
-            service_category_id: config.service_biller_ids.buy_airtime[`${requestPayload.transaction.details.telco_code}`],
+            service_category_id: config.service_biller_ids.buy_airtime[`${(requestPayload.transaction.details.telco_code).toLowerCase()}`],
             phonenumber: requestPayload.transaction.customer.customer_ref,
             status_url: CONSTANTS.SERVICE_STATUS_URL.BUY_AIRTIME
         };
 
-        const airtimeResponse = await payantServiceApiCall(token, CONSTANTS.URL_PATHS.airtime, postDetails, requestPayload, (data) => {
+        const airtimeResponse = await payantServiceApiCall(token, CONSTANTS.URL_PATHS.airtime, postDetails, requestPayload, async (data) => {
             if (data.status === CONSTANTS.PAYANT_STATUS_TYPES.error) {
                 logger.error(`Provider error response on attempt to make airtime purchase: ${data.message}`);
                 throw new ProviderResponseError(`Provider error response on attempt to make airtime purchase: ${data.message}`);
             }
 
-            const referenceCode = data.transaction.response_payload.data.msg.results.refCode;
-            const processedTransaction = getTransactionStatus(token, referenceCode);
+            const referenceCode = data.transaction._id;
+            const processedTransaction = await getTransactionStatus(token, referenceCode);
 
             if (processedTransaction.status === CONSTANTS.PAYANT_STATUS_TYPES.error) {
                 logger.error(`Provider error response on attempt to fetch airtime purchase transaction status: ${data.message}`);
@@ -202,8 +196,9 @@ class BaseService {
             return processedTransaction;
         });
 
-        const serviceRawResponse = airtimeResponse.data.response_payload;
-        const airtime = mapAirtimeResponse(serviceRawResponse.data.msg.results, serviceRawResponse.data.amount, requestPayload.transaction.details.order_reference);
+        const serviceRawResponse = airtimeResponse.data;
+        serviceRawResponse.transactionStatus = airtimeResponse.status;
+        const airtime = mapAirtimeResponse(serviceRawResponse, serviceRawResponse.amount, requestPayload.transaction.details.order_reference);
 
         await this.storeTransaction(requestPayload, serviceRawResponse, airtime);
         return airtime;
@@ -213,16 +208,16 @@ class BaseService {
         const requestPayload = request.data;
         const token = request.token;
 
-        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.auth.route_mode)) {
+        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.request_mode)) {
             logger.error('invalid request mode was provided');
             throw new InvalidRequestModeError('invalid request mode was provided');
         }
 
-        if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.QUERY) {
+        if (requestPayload.request_mode == CONSTANTS.REQUEST_TYPES.QUERY) {
             return await this.queryTransaction(requestPayload);
         }
 
-        if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.OPTIONS) {
+        if (requestPayload.request_mode == CONSTANTS.REQUEST_TYPES.OPTIONS) {
             return await this.listProviderServices(requestPayload, token);
         }
 
@@ -298,7 +293,7 @@ class BaseService {
         const requestPayload = request.data;
         const token = request.token;
 
-        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.auth.route_mode)) {
+        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.request_mode)) {
             logger.error('invalid request mode was provided');
             throw new InvalidRequestModeError('invalid request mode was provided');
         }
@@ -321,7 +316,7 @@ class BaseService {
         }
 
         if ((requestPayload.transaction.mock_mode).toLowerCase() == CONSTANTS.MOCK_MODES.INSPECT) {
-            if (!requestPayload.transaction.details || (!requestPayload.transaction.details.order_reference && requestPayload.auth.route_mode != CONSTANTS.REQUEST_TYPES.OPTIONS) || !requestPayload.transaction.details.biller_id || !requestPayload.request_type || !requestPayload.transaction.customer.customer_ref || !requestPayload.transaction.amount) {
+            if (!requestPayload.transaction.details || (!requestPayload.transaction.details.order_reference && requestPayload.request_mode != CONSTANTS.REQUEST_TYPES.OPTIONS) || !requestPayload.transaction.details.biller_id || !requestPayload.request_type || !requestPayload.transaction.customer.customer_ref || !requestPayload.transaction.amount) {
                 logger.error('Incomplete options request - Required parameters: [order_reference, biller_id, request_type, customer_ref, amount]');
                 throw new InvalidParamsError('Incomplete options request - Required parameters: [order_reference, biller_id, request_type, customer_ref, amount]');
             } else {
@@ -334,7 +329,7 @@ class BaseService {
             throw new InvalidParamsError('Request type has be to passed as pay_electricity ');
         }
 
-        if (!requestPayload.transaction.details.order_reference && requestPayload.auth.route_mode != CONSTANTS.REQUEST_TYPES.OPTIONS) {
+        if (!requestPayload.transaction.details.order_reference && requestPayload.request_mode != CONSTANTS.REQUEST_TYPES.OPTIONS) {
             logger.error('Order Reference is a required param for transact calls.');
             throw new InvalidParamsError('Order Reference is a required param for transact calls.');
         }
@@ -377,7 +372,7 @@ class BaseService {
         const requestPayload = request.data;
         const token = request.token;
 
-        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.auth.route_mode)) {
+        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.request_mode)) {
             logger.error('invalid request mode was provided');
             throw new InvalidRequestModeError('invalid request mode was provided');
         }
@@ -386,7 +381,7 @@ class BaseService {
             return await this.queryTransaction(requestPayload);
         }
 
-        if (requestPayload.auth.route_mode == CONSTANTS.REQUEST_TYPES.OPTIONS) {
+        if (requestPayload.request_mode == CONSTANTS.REQUEST_TYPES.OPTIONS) {
             return await this.listProviderServices(requestPayload, token);
         }
 
@@ -455,7 +450,7 @@ class BaseService {
         const requestPayload = request.data;
         const token = request.token;
 
-        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.auth.route_mode)) {
+        if (!CONSTANTS.REQUEST_MODES.includes(requestPayload.request_mode)) {
             logger.error('invalid request mode was provided');
             throw new InvalidRequestModeError('invalid request mode was provided');
         }
