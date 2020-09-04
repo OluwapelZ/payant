@@ -26,7 +26,7 @@ describe('Tv Service', () => {
         const requestPayload = Object.assign({}, invalidData);
         requestPayload.request_mode = 'transact';
         const fetchTransactionByRefMock = (Transaction.prototype.fetchTransactionByOrderRef = jest.fn());
-        requestPayload.request_type = 'pay_tv';
+        requestPayload.request_type = 'pay tv';
         requestPayload.transaction.details.biller_id = 'invalid_tv';
         requestPayload.transaction.details.order_reference = 'sfsfsdf';
         try {
@@ -39,11 +39,11 @@ describe('Tv Service', () => {
         }
     });
 
-    it('should throw error if pay_tv service does not support biller', async (done) => {
+    it('should throw error if pay tv service does not support biller', async (done) => {
         const requestPayload = Object.assign({}, invalidData);
         requestPayload.request_mode = 'transact';
         const fetchTransactionByRefMock = (Transaction.prototype.fetchTransactionByOrderRef = jest.fn());
-        requestPayload.request_type = 'pay_tv';
+        requestPayload.request_type = 'pay tv';
         requestPayload.transaction.details.biller_id = 'invalid_biller';
         requestPayload.transaction.details.biller_item_id = 900
         requestPayload.transaction.details.order_reference = 'sfsfsdf';
@@ -61,7 +61,7 @@ describe('Tv Service', () => {
         const requestPayload = Object.assign({}, invalidData);
         requestPayload.request_mode = 'transact';
         const fetchTransactionByRefMock = (Transaction.prototype.fetchTransactionByOrderRef = jest.fn());
-        requestPayload.request_type = 'pay_tv';
+        requestPayload.request_type = 'pay tv';
         requestPayload.transaction.details.biller_id = 'gotv';
         requestPayload.transaction.details.biller_item_id = 900
         requestPayload.transaction.details.order_reference = 'sfsfsdf';
@@ -80,7 +80,7 @@ describe('Tv Service', () => {
         const requestPayload = Object.assign({}, invalidData);
         requestPayload.request_mode = 'transact';
         const fetchTransactionByRefMock = (Transaction.prototype.fetchTransactionByOrderRef = jest.fn());
-        requestPayload.request_type = 'pay_tv';
+        requestPayload.request_type = 'pay tv';
         requestPayload.transaction.details.biller_id = 'gotv';
         requestPayload.transaction.details.biller_item_id = 900
         requestPayload.transaction.details.order_reference = 'sfsfsdf';
@@ -100,7 +100,7 @@ describe('Tv Service', () => {
         const requestPayload = Object.assign({}, invalidData);
         requestPayload.request_mode = 'transact';
         const fetchTransactionByRefMock = (Transaction.prototype.fetchTransactionByOrderRef = jest.fn());
-        requestPayload.request_type = 'pay_tv';
+        requestPayload.request_type = 'pay tv';
         requestPayload.transaction.details.biller_id = 'gotv';
         requestPayload.transaction.details.biller_item_id = 900
         requestPayload.transaction.details.order_reference = 'sfsfsdf';

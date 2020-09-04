@@ -15,13 +15,13 @@ const CONSTANTS = {
         OPTIONS: 'options',
         VALIDATE: 'validate',
         QUERY: 'query',
-        PAY_TV: 'pay_tv',
-        PAY_ELECTRICITY: 'pay_electricity',
+        PAY_TV: 'pay tv',
+        PAY_ELECTRICITY: 'pay electricity',
         NIN_MID: 'lookup_nin_mid',
         NIN_MIN: 'lookup_nin_min',
         BUY_AIRTIME: 'buy airtime',
-        BUY_DATA: 'buy_data',
-        BUY_SCRATCH_CARD: 'buy_scratch_card'
+        BUY_DATA: 'buy data',
+        BUY_SCRATCH_CARD: 'buy scratch card'
     },
     REQUEST_MODES: ['transact', 'options', 'query', 'validate'],
     AVAILABLE_SERVICES: ['buy_airtime', 'buy_data', 'pay_tv', 'pay_electricity', 'lookup_nin_min', 'lookup_nin_mid'],

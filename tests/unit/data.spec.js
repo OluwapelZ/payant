@@ -1,8 +1,8 @@
 const Transaction = require('../../src/models/transaction');
 const BaseService = require('../../src/services/base');
-const { InvalidParamsError, InvalidRequestModeError, ProviderResponseError, BillerNotSupportedError, ServiceNotImplementedError } = require('../../src/error/index');
+const { InvalidParamsError, BillerNotSupportedError } = require('../../src/error/index');
 const { payantServiceApiCall, getTransactionStatus } = require('../../src/utils/third_party_api_call');
-const { invalidData, optionsProviderResponse } = require('../fixtures/airtime');
+const { invalidData } = require('../fixtures/airtime');
 
 jest.mock('../../src/utils/third_party_api_call', () => {
     return {
@@ -26,7 +26,7 @@ describe('Data Service', () => {
         const requestPayload = Object.assign({}, invalidData);
         requestPayload.request_mode = 'transact';
         const fetchTransactionByRefMock = (Transaction.prototype.fetchTransactionByOrderRef = jest.fn());
-        requestPayload.request_type = 'buy_data';
+        requestPayload.request_type = 'buy data';
         requestPayload.transaction.details.biller_id = 'Smile';
         requestPayload.transaction.details.order_reference = 'sfsfsdf';
         try {
@@ -39,11 +39,11 @@ describe('Data Service', () => {
         }
     });
 
-    it('should throw error if buy_data service does not support biller', async (done) => {
+    it('should throw error if buy data service does not support biller', async (done) => {
         const requestPayload = Object.assign({}, invalidData);
         requestPayload.request_mode = 'transact';
         const fetchTransactionByRefMock = (Transaction.prototype.fetchTransactionByOrderRef = jest.fn());
-        requestPayload.request_type = 'buy_data';
+        requestPayload.request_type = 'buy data';
         requestPayload.transaction.details.biller_id = 'invalid_biller';
         requestPayload.transaction.details.biller_item_id = 900
         requestPayload.transaction.details.order_reference = 'sfsfsdf';
@@ -61,7 +61,7 @@ describe('Data Service', () => {
         const requestPayload = Object.assign({}, invalidData);
         requestPayload.request_mode = 'transact';
         const fetchTransactionByRefMock = (Transaction.prototype.fetchTransactionByOrderRef = jest.fn());
-        requestPayload.request_type = 'buy_data';
+        requestPayload.request_type = 'buy data';
         requestPayload.transaction.details.biller_id = 'Smile';
         requestPayload.transaction.details.biller_item_id = 900;
         requestPayload.transaction.details.order_reference = 'sfsfsdf';
@@ -81,7 +81,7 @@ describe('Data Service', () => {
         const requestPayload = Object.assign({}, invalidData);
         requestPayload.request_mode = 'transact';
         const fetchTransactionByRefMock = (Transaction.prototype.fetchTransactionByOrderRef = jest.fn());
-        requestPayload.request_type = 'buy_data';
+        requestPayload.request_type = 'buy data';
         requestPayload.transaction.details.biller_id = 'Smile';
         requestPayload.transaction.details.biller_item_id = 900;
         requestPayload.transaction.details.order_reference = 'sfsfsdf';

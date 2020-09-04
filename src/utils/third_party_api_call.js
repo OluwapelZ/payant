@@ -83,18 +83,26 @@ function payantServiceApiCall(token, url_path, payantRequestPayload, onePipeRequ
     };
     requestHeaders.headers['Content-Type'] = 'application/json';
 
+    const apiLoggerRequest = {
+        ...onePipeRequestPayload,
+        body: payantRequestPayload,
+        headers: requestHeaders,
+        transaction_time: now().toISOString(),
+    }
+
     return axios.post(`${config.payant_base_url}${url_path}`, payantRequestPayload, requestHeaders)
     .then(async (response) => {
-        const apiLoggerRequest = {
-            ...onePipeRequestPayload,
-            body: payantRequestPayload,
-            headers: requestHeaders,
-            transaction_time: now().toISOString(),
-        }
         await apiLogger(mapAPILogger(apiLoggerRequest, response));
         return (typeof callback !== 'undefined') ? callback(response.data) : response.data}
     )
-    .catch(function (err) {
+    .catch(async function (err) {
+        err.response = {
+            status: 'failed',
+            statusText: err.message,
+            headers: [],
+            data: null
+        };
+        await apiLogger(mapAPILogger(apiLoggerRequest, err.response));
         logger.error(`Error occurred on payant service call: ${err.message}`);
         throw err;
     })

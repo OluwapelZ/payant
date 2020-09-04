@@ -139,11 +139,11 @@ function mapDataResponse(responsePayload, amount, orderRef, isMock=false) {
         errors: null,
         error: null,
         provider_response: {
-            payment_status: "Successful",
-            fulfillment_status: "Processing",
-            transaction_final_amount: (isMock) ? "0.00" : (Number(amount) * 100), //In kobo
+            payment_status: responsePayload.transactionStatus,
+            fulfillment_status: responsePayload.status,
+            transaction_final_amount: (isMock) ? "0.00" : amount,
             transaction_fee: "0.00",
-            narration: (isMock) ? " " : (responsePayload.text) ? responsePayload.text : "",
+            narration: (isMock) ? " " : `${responsePayload._service_category.name}: ${responsePayload.request_payload.bundleCode} MB, ${responsePayload.status}`,
             reference: isMock ? "mockReference" : orderRef,
             "meta":{}
         }
@@ -193,12 +193,12 @@ function mapScratchCardResponse(responsePayload, orderReference, isMock=false) {
         errors: null,
         error: null,
         provider_response: {
-            scratch_card_number: isMock ? "mock card number" : responsePayload.pin.serialNumber,
-            sratch_card_pin: isMock ? "mock card pin" : responsePayload.pin.pinCode,
-            scratch_card_serial: isMock ? "mock scratch serial number" : responsePayload.pin.serialNumber,
-            payment_status: "Successful",
-            fulfillment_status: "Succesful",
-            transaction_final_amount: isMock ? "000000000" : responsePayload.amount,
+            scratch_card_number: isMock ? "mock card number" : responsePayload.transaction.pin.serialNumber,
+            sratch_card_pin: isMock ? "mock card pin" : responsePayload.transaction.pin.pinCode,
+            scratch_card_serial: isMock ? "mock scratch serial number" : responsePayload.transaction.pin.serialNumber,
+            payment_status: responsePayload.status,
+            fulfillment_status: responsePayload.message,
+            transaction_final_amount: isMock ? "000000000" : responsePayload.transaction.amount,
             transaction_fee: 0,
             narration: "Waec Scratch card purchase was successful",
             reference: isMock ? "mockReference" : orderReference,

@@ -90,6 +90,7 @@ class BaseService {
             throw new BillerProductError('Product biller id has to be passed in details object [nested in transaction object]');
         }
 
+        request.request_type = ((request.request_type).split(" ")).join("_");
         const billerId = config.service_biller_ids[`${request.request_type}`][`${request.transaction.details.biller_id}`];
 
         if (!billerId) {
@@ -97,7 +98,7 @@ class BaseService {
             throw new BillerNotSupportedError(`Provider does not support "${request.transaction.details.biller_id}" biller`);
         }
 
-        if (['pay_tv'].includes(request.request_type)) {
+        if (['pay tv'].includes(request.request_type)) {
             if (!request.transaction.customer.customer_ref) {
                 logger.error(`Missing parameter customer_ref for service "${request.request_type}"`);
                 throw new CustomerVerificationError(`Missing parameter customer_ref for service "${request.request_type}"`);
@@ -265,14 +266,14 @@ class BaseService {
             status_url: CONSTANTS.SERVICE_STATUS_URL.BUY_AIRTIME
         };
 
-        const dataResponse = await payantServiceApiCall(token, CONSTANTS.URL_PATHS.data, postDetails, requestPayload, (data) => {
+        const dataResponse = await payantServiceApiCall(token, CONSTANTS.URL_PATHS.data, postDetails, requestPayload, async (data) => {
             if (data.status === CONSTANTS.PAYANT_STATUS_TYPES.error) {
                 logger.error(`Provider error response on attempt to make data purchase: ${data.message}`);
                 throw new ProviderResponseError(`Provider error response on attempt to make data purchase: ${data.message}`);
             }
 
-            const referenceCode = data.transaction.response_payload.data.msg.results.refCode;
-            const processedTransaction = getTransactionStatus(token, referenceCode);
+            const referenceCode = data.transaction._id;
+            const processedTransaction = await getTransactionStatus(token, referenceCode);
 
             if (![CONSTANTS.PAYANT_STATUS_TYPES.successful, CONSTANTS.PAYANT_STATUS_TYPES.pending].includes(processedTransaction.status)) {
                 logger.error(`Provider error response on attempt to fetch data purchase transaction status: ${data.message}`);
@@ -282,8 +283,9 @@ class BaseService {
             return processedTransaction;
         });
 
-        const serviceRawResponse = dataResponse.data.response_payload;
-        const data = mapDataResponse(serviceRawResponse.data.msg.results, serviceRawResponse.data.amount, requestPayload.transaction.details.order_reference);
+        const serviceRawResponse = dataResponse.data;
+        serviceRawResponse.transactionStatus = dataResponse.status;
+        const data = mapDataResponse(serviceRawResponse, serviceRawResponse.amount, requestPayload.transaction.details.order_reference);
 
         await this.storeTransaction(requestPayload, serviceRawResponse, data);
         return data;
@@ -311,10 +313,7 @@ class BaseService {
             );
         }
 
-        if (requestPayload.request_mode == CONSTANTS.REQUEST_TYPES.OPTIONS) {
-            return await this.listProviderServices(requestPayload, token);
-        }
-
+        // There's no need for an options call in pay electricity as it has been mapped already
         if ((requestPayload.transaction.mock_mode).toLowerCase() == CONSTANTS.MOCK_MODES.INSPECT) {
             if (!requestPayload.transaction.details || (!requestPayload.transaction.details.order_reference && requestPayload.request_mode != CONSTANTS.REQUEST_TYPES.OPTIONS) || !requestPayload.transaction.details.biller_id || !requestPayload.request_type || !requestPayload.transaction.customer.customer_ref || !requestPayload.transaction.amount) {
                 logger.error('Incomplete options request - Required parameters: [order_reference, biller_id, request_type, customer_ref, amount]');
@@ -334,19 +333,17 @@ class BaseService {
             throw new InvalidParamsError('Order Reference is a required param for transact calls.');
         }
 
-        await new Transaction().fetchTransactionByOrderRef(requestPayload.transaction.details.order_reference); // Fetch active transaction by order refrence
-
         if (!requestPayload.transaction.details || !requestPayload.transaction.details.biller_id) {
             logger.error(`Biller id is not provided`);
             throw new InvalidParamsError('Biller id is not provided');
         }
 
-        if (!config.service_biller_ids.pay_electricity.hasOwnProperty(requestPayload.transaction.details.biller_id)) {
+        if (!config.service_biller_ids.pay_electricity.hasOwnProperty((requestPayload.transaction.details.biller_id).toLowerCase())) {
             logger.error(`Service "buy_electricity" does not support biller: ${requestPayload.transaction.details.biller_id}`);
-            throw new BillerNotSupportedError(`Biller ${requestPayload.transaction.details.biller_id} is not supported by service buy_electricity`)
+            throw new BillerNotSupportedError(`Biller ${requestPayload.transaction.details.biller_id} is not supported by service buy_electricity`);
         }
 
-        const billerId = config.service_biller_ids[`${requestPayload.request_type}`][`${requestPayload.transaction.details.biller_id}`];
+        const billerId = config.service_biller_ids[`${((requestPayload.request_type).split(" ")).join("_")}`][`${(requestPayload.transaction.details.biller_id).toLowerCase()}`];
         const verifyCustomer = await payantServiceApiCall(token, `${CONSTANTS.URL_PATHS.list_services_products}/${billerId}/verify`, { account: requestPayload.transaction.customer.customer_ref }, requestPayload);
 
         if (verifyCustomer.status != CONSTANTS.PAYANT_STATUS_TYPES.successful) {
@@ -410,7 +407,7 @@ class BaseService {
             throw new InvalidParamsError('Biller id is not provided');
         }
 
-        if (!config.service_biller_ids.pay_tv.hasOwnProperty(requestPayload.transaction.details.biller_id)) {
+        if (!config.service_biller_ids.pay_tv.hasOwnProperty((requestPayload.transaction.details.biller_id).toLowerCase())) {
             logger.error(`Service "pay_tv" does not support biller: ${requestPayload.transaction.details.biller_id}`);
             throw new BillerNotSupportedError(`Biller ${requestPayload.transaction.details.biller_id} is not supported by service pay_tv`)
         }
@@ -420,9 +417,10 @@ class BaseService {
             throw new InvalidParamsError(`Missing parameter customer_ref [tv unique number] or amount`);
         }
 
-        const billerId = config.service_biller_ids[`${requestPayload.request_type}`][`${requestPayload.transaction.details.biller_id}`];
+        const billerId = config.service_biller_ids[`${((requestPayload.request_type).split(" ")).join("_")}`][`${requestPayload.transaction.details.biller_id}`];
 
         const verifyCustomer = await payantServiceApiCall(token, `${CONSTANTS.URL_PATHS.list_services_products}/${billerId}/verify`, { account: requestPayload.transaction.customer.customer_ref }, requestPayload);
+        console.log(verifyCustomer);
 
         if (verifyCustomer.status != CONSTANTS.PAYANT_STATUS_TYPES.successful) {
             logger.error(`Customer unique reference verification with biller ${requestPayload.transaction.details.biller_id} failed: ${verifyCustomer.message}`);
@@ -459,10 +457,6 @@ class BaseService {
             return await this.queryTransaction(requestPayload);
         }
 
-        if (requestPayload.request_mode == CONSTANTS.REQUEST_TYPES.OPTIONS) {
-            return await this.listProviderServices(requestPayload, token);
-        }
-
         if ((requestPayload.transaction.mock_mode).toLowerCase() == CONSTANTS.MOCK_MODES.INSPECT) {
             if (!requestPayload.transaction.details || !requestPayload.transaction.details.order_reference || !requestPayload.transaction.details.biller_id || !requestPayload.request_type || !requestPayload.transaction.amount) {
                 logger.error('Incomplete options request - Required parameters: [order_reference, biller_id, biller_item_id, request_type, amount]');
@@ -481,14 +475,13 @@ class BaseService {
             logger.error('Order Reference is a required param for transact calls.');
             throw new InvalidParamsError('Order Reference is a required param for transact calls.');
         }
-        await new Transaction().fetchTransactionByOrderRef(requestPayload.transaction.details.order_reference); // Fetch active transaction by order refrence
 
         if (!requestPayload.transaction.details || !requestPayload.transaction.details.biller_id) {
             logger.error(`Biller id has to be passed in details object nested in transaction object`);
             throw new InvalidParamsError('Biller id [waec] is not provided');
         }
 
-        if (!config.service_biller_ids.buy_scratch_card.hasOwnProperty(requestPayload.transaction.details.biller_id)) {
+        if (!config.service_biller_ids.buy_scratch_card.hasOwnProperty((requestPayload.transaction.details.biller_id).toLowerCase())) {
             logger.error(`Service "buy_scratch_card" does not support biller: ${requestPayload.transaction.details.biller_id}`);
             throw new BillerNotSupportedError(`Biller ${requestPayload.transaction.details.biller_id} is not supported by service buy_scratch_card`)
         }
@@ -498,15 +491,16 @@ class BaseService {
             throw new InvalidParamsError('Required parameter amount was not provided');
         }
 
-        const billerId = config.service_biller_ids[`${requestPayload.request_type}`][`${requestPayload.transaction.details.biller_id}`];
+        const billerId = config.service_biller_ids[`${((requestPayload.request_type).split(" ")).join("_")}`][`${(requestPayload.transaction.details.biller_id).toLowerCase()}`];
 
         const postDetails = {
             service_category_id: billerId,
             pins: 1,
             amount: requestPayload.transaction.amount
         };
+
         const scratchCardResponse = await payantServiceApiCall(token, CONSTANTS.URL_PATHS.buy_scratch_card, postDetails, requestPayload);
-        const scratchCard = mapScratchCardResponse(scratchCardResponse.transaction, generateRandomReference());
+        const scratchCard = mapScratchCardResponse(scratchCardResponse, generateRandomReference());
 
         await this.storeTransaction(requestPayload, scratchCardResponse, scratchCard);
         return scratchCard;
