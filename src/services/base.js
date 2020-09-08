@@ -91,7 +91,7 @@ class BaseService {
         }
 
         request.request_type = ((request.request_type).split(" ")).join("_");
-        const billerId = config.service_biller_ids[`${request.request_type}`][`${request.transaction.details.biller_id}`];
+        const billerId = config.service_biller_ids[`${request.request_type}`][`${(request.transaction.details.biller_id).toLowerCase()}`];
 
         if (!billerId) {
             logger.error(`Provider does not support "${request.transaction.details.biller_id}" biller`);
