@@ -30,7 +30,7 @@ const config = {
     },
     service_biller_ids: {
         buy_airtime: {
-            aritel: process.env.AIRTEL,
+            airtel: process.env.AIRTEL,
             mtn: process.env.MTN,
             glo: process.env.GLO,
             '9mobile': process.env.NINE_MOBILE,

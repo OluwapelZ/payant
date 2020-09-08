@@ -46,13 +46,16 @@ async function authenticatePayantUser(req, res, next) {
 async function authUser(requestPayload) {
     let username = '';
     let password = '';
-    
-    if (requestPayload.auth && requestPayload.auth.secure != '') {
+    if (requestPayload.auth && requestPayload.auth.secure && requestPayload.auth.secure != '') {
         username = requestPayload.auth.secure.split(';')[0];
         password = requestPayload.auth.secure.split(';')[1];
-    } else {
-        username = requestPayload.transaction.app_info.extras.phone_number;
-        password = requestPayload.transaction.app_info.extras.password;
+    } else if(requestPayload.transaction.app_info.extras.allow_wallet_override=="true" || requestPayload.request_mode==CONSTANTS.REQUEST_TYPES.QUERY) {
+            username = requestPayload.transaction.app_info.extras.phone_number;
+            password = requestPayload.transaction.app_info.extras.password;
+    }
+    else{
+        logger.error('Invalid authentication details - Unauthorized user');
+        return null;
     }
 
     const authResponse = await authenticate(password, username);

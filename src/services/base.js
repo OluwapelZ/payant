@@ -28,7 +28,7 @@ class BaseService {
     async queryTransaction(requestPayload) {
         let serviceResponse = null;
         let transaction = null;
-
+        
         if (!requestPayload.transaction || !requestPayload.transaction.transaction_ref) {
             logger.error('Transaction reference is required for query requests');
             throw new InvalidRequestModeError('Transaction reference is required for query requests');
@@ -37,7 +37,7 @@ class BaseService {
         switch(parsedRequestType) {
             case CONSTANTS.REQUEST_TYPES.BUY_AIRTIME:
                 transaction = await new Transaction().fetchTransactionByReference(requestPayload.transaction.transaction_ref);
-                serviceResponse = this.queryTransactionBuilder(requestPayload, transaction);
+                serviceResponse = await this.queryTransactionBuilder(requestPayload, transaction);
                 break;
             case CONSTANTS.REQUEST_TYPES.BUY_DATA:
                 transaction = await new Transaction().fetchTransactionByReference(requestPayload.transaction.transaction_ref);
@@ -143,18 +143,17 @@ class BaseService {
         if (requestPayload.request_mode == CONSTANTS.REQUEST_TYPES.OPTIONS) {
             return await this.listProviderServices(requestPayload, token);
         }
-
         if (((requestPayload.transaction.mock_mode).toLowerCase()).toLowerCase() == CONSTANTS.MOCK_MODES.INSPECT) {
-            if (!requestPayload.transaction.details || !requestPayload.transaction.details.order_reference || !requestPayload.transaction.details.telco_code || !requestPayload.request_type || !requestPayload.transaction.customer.customer_ref || !requestPayload.transaction.amount) {
-                logger.error('Incomplete options request - Required parameters: [order_reference, telco_code, request_type, customer_ref, amount]');
-                throw new InvalidParamsError('Incomplete options request - Required parameters: [order_reference, telco_code, request_type, customer_ref, amount]');
+            if (!requestPayload.transaction.details || !requestPayload.transaction.details.telco_code || !requestPayload.request_type || !requestPayload.transaction.details.fulfillment_msisdn || !requestPayload.transaction.amount) {
+                logger.error('Incomplete options request - Required parameters: [telco_code, request_type, fulfillment_msisdn, amount]');
+                throw new InvalidParamsError('Incomplete options request - Required parameters: [telco_code, request_type, fulfillment_msisdn, amount]');
             } else {
-                return mapAirtimeResponse(null, null, null, true);
+                return mapAirtimeResponse({status: "Successful", transactionStatus : "Successful"}, requestPayload.transaction.amount, null, true);
             }
         }
-
-        if (requestPayload.request_type != CONSTANTS.REQUEST_TYPES.BUY_AIRTIME) {
-            logger.error('Request type has be to passed as buy_airtime');
+        const parsedRequestType = requestPayload.request_type.replace(/ /g,'_');
+        if (parsedRequestType != CONSTANTS.REQUEST_TYPES.BUY_AIRTIME) {
+            logger.error('Request type has to be passed as buy_airtime');
             throw new InvalidParamsError('Request type has be to passed as buy_airtime ');
         }
 
@@ -162,7 +161,7 @@ class BaseService {
             logger.error(`Telco code (biller id) has to be passed in details object nested in transaction object`);
             throw new InvalidParamsError('Biller id (telco_code) is not provided');
         }
-
+       
         if(!config.service_biller_ids.buy_airtime.hasOwnProperty((requestPayload.transaction.details.telco_code).toLowerCase())) {
             logger.error(`Service "buy_airtime" does not support biller: ${requestPayload.transaction.details.telco_code}`);
             throw new BillerNotSupportedError(`Biller ${requestPayload.transaction.details.telco_code} is not supported by service buy_airtime`)
@@ -174,32 +173,36 @@ class BaseService {
         }
 
         const postDetails = {
-            amount: requestPayload.transaction.amount,
+            amount: requestPayload.transaction.amount / 100,
             service_category_id: config.service_biller_ids.buy_airtime[`${(requestPayload.transaction.details.telco_code).toLowerCase()}`],
-            phonenumber: requestPayload.transaction.customer.customer_ref,
+            phonenumber: requestPayload.transaction.details.fulfillment_msisdn,
             status_url: CONSTANTS.SERVICE_STATUS_URL.BUY_AIRTIME
         };
 
         const airtimeResponse = await payantServiceApiCall(token, CONSTANTS.URL_PATHS.airtime, postDetails, requestPayload, async (data) => {
-            if (data.status === CONSTANTS.PAYANT_STATUS_TYPES.error) {
-                logger.error(`Provider error response on attempt to make airtime purchase: ${data.message}`);
-                throw new ProviderResponseError(`Provider error response on attempt to make airtime purchase: ${data.message}`);
-            }
-
+            data._service_category = {name:""};
             const referenceCode = data.transaction._id;
             const processedTransaction = await getTransactionStatus(token, referenceCode);
-
-            if (processedTransaction.status === CONSTANTS.PAYANT_STATUS_TYPES.error) {
-                logger.error(`Provider error response on attempt to fetch airtime purchase transaction status: ${data.message}`);
-                throw new ProviderResponseError(`Provider error response on attempt to fetch airtime purchase transaction status: ${data.message}`);
+            if (data.status === CONSTANTS.PAYANT_STATUS_TYPES.error) {
+                logger.error(`Provider error response on attempt to make airtime purchase: ${data.message}`);
+                await this.storeTransaction(requestPayload, data, 
+                    mapAirtimeResponse(data, postDetails.amount, requestPayload.transaction.details.order_reference));
+                throw new ProviderResponseError(`Provider error response on attempt to make airtime purchase: ${data.message}`);
             }
-
+            else{
+                if (processedTransaction.status === CONSTANTS.PAYANT_STATUS_TYPES.error) {
+                    logger.error(`Provider error response on attempt to fetch airtime purchase transaction status: ${data.message}`);
+                    await this.storeTransaction(requestPayload, data, 
+                        mapAirtimeResponse(data, postDetails.amount, requestPayload.transaction.details.order_reference));
+                    throw new ProviderResponseError(`Provider error response on attempt to fetch airtime purchase transaction status: ${data.message}`);
+                }
+       
+            }
             return processedTransaction;
         });
-
         const serviceRawResponse = airtimeResponse.data;
         serviceRawResponse.transactionStatus = airtimeResponse.status;
-        const airtime = mapAirtimeResponse(serviceRawResponse, serviceRawResponse.amount, requestPayload.transaction.details.order_reference);
+        const airtime = mapAirtimeResponse(serviceRawResponse, postDetails.amount, requestPayload.transaction.details.order_reference);
 
         await this.storeTransaction(requestPayload, serviceRawResponse, airtime);
         return airtime;
@@ -230,8 +233,8 @@ class BaseService {
                 return mapDataResponse(null, null, null, true);
             }
         }
-
-        if (requestPayload.request_type != CONSTANTS.REQUEST_TYPES.BUY_DATA) {
+        const parsedRequestType = requestPayload.request_type.replace(/ /g,'_');
+        if (parsedRequestType != CONSTANTS.REQUEST_TYPES.BUY_DATA) {
             logger.error('Request type has be to passed as buy_data');
             throw new InvalidParamsError('Request type has be to passed as buy_data ');
         }
@@ -322,8 +325,8 @@ class BaseService {
                 return mapElectricityResponse(null, true);
             }
         }
-
-        if (requestPayload.request_type != CONSTANTS.REQUEST_TYPES.PAY_ELECTRICITY) {
+        const parsedRequestType = requestPayload.request_type.replace(/ /g,'_');
+        if (parsedRequestType != CONSTANTS.REQUEST_TYPES.PAY_ELECTRICITY) {
             logger.error('Request type has be to passed as pay_electricity');
             throw new InvalidParamsError('Request type has be to passed as pay_electricity ');
         }
@@ -390,8 +393,8 @@ class BaseService {
                 return mapTvResponse(null, null, true);
             }
         }
-
-        if (requestPayload.request_type != CONSTANTS.REQUEST_TYPES.PAY_TV) {
+        const parsedRequestType = requestPayload.request_type.replace(/ /g,'_');
+        if (parsedRequestType != CONSTANTS.REQUEST_TYPES.PAY_TV) {
             logger.error('Request type has be to passed as pay_tv');
             throw new InvalidParamsError('Request type has be to passed as pay_tv ');
         }
@@ -420,7 +423,7 @@ class BaseService {
         const billerId = config.service_biller_ids[`${((requestPayload.request_type).split(" ")).join("_")}`][`${requestPayload.transaction.details.biller_id}`];
 
         const verifyCustomer = await payantServiceApiCall(token, `${CONSTANTS.URL_PATHS.list_services_products}/${billerId}/verify`, { account: requestPayload.transaction.customer.customer_ref }, requestPayload);
-        console.log(verifyCustomer);
+       
 
         if (verifyCustomer.status != CONSTANTS.PAYANT_STATUS_TYPES.successful) {
             logger.error(`Customer unique reference verification with biller ${requestPayload.transaction.details.biller_id} failed: ${verifyCustomer.message}`);
@@ -458,22 +461,18 @@ class BaseService {
         }
 
         if ((requestPayload.transaction.mock_mode).toLowerCase() == CONSTANTS.MOCK_MODES.INSPECT) {
-            if (!requestPayload.transaction.details || !requestPayload.transaction.details.order_reference || !requestPayload.transaction.details.biller_id || !requestPayload.request_type || !requestPayload.transaction.amount) {
-                logger.error('Incomplete options request - Required parameters: [order_reference, biller_id, biller_item_id, request_type, amount]');
-                throw new InvalidParamsError('Incomplete options request - Required parameters: [order_reference, biller_id, biller_item_id, request_type, amount]');
+            if (!requestPayload.transaction.details || !requestPayload.transaction.details.biller_id || !requestPayload.request_type || !requestPayload.transaction.amount) {
+                logger.error('Incomplete options request - Required parameters: [ biller_id, biller_item_id, request_type, amount]');
+                throw new InvalidParamsError('Incomplete options request - Required parameters: [biller_id, biller_item_id, request_type, amount]');
             } else {
                 return mapScratchCardResponse(null, null, true);
             }
         }
         
-        if (requestPayload.request_type != CONSTANTS.REQUEST_TYPES.BUY_SCRATCH_CARD) {
+        const parsedRequestType = requestPayload.request_type.replace(/ /g,'_');
+        if (parsedRequestType!= CONSTANTS.REQUEST_TYPES.BUY_SCRATCH_CARD) {
             logger.error('Request type has be to passed as buy_scratch_card');
             throw new InvalidParamsError('Request type has be to passed as buy_scratch_card ');
-        }
-
-        if (!requestPayload.transaction.details.order_reference) {
-            logger.error('Order Reference is a required param for transact calls.');
-            throw new InvalidParamsError('Order Reference is a required param for transact calls.');
         }
 
         if (!requestPayload.transaction.details || !requestPayload.transaction.details.biller_id) {
@@ -496,10 +495,19 @@ class BaseService {
         const postDetails = {
             service_category_id: billerId,
             pins: 1,
-            amount: requestPayload.transaction.amount
+            amount: requestPayload.transaction.amount/100
         };
+        console.log(postDetails);
 
         const scratchCardResponse = await payantServiceApiCall(token, CONSTANTS.URL_PATHS.buy_scratch_card, postDetails, requestPayload);
+        console.log(JSON.stringify(scratchCardResponse));
+    
+        if (scratchCardResponse.status === CONSTANTS.PAYANT_STATUS_TYPES.error) {
+            logger.error(`Provider error response on attempt to buy scratch card: ${scratchCardResponse.message}`);
+            await this.storeTransaction(requestPayload, scratchCardResponse, 
+                mapScratchCardResponse(scratchCardResponse, generateRandomReference()));
+            throw new ProviderResponseError(`Provider error response on attempt to buy sratch card transaction status: ${scratchCardResponse.message}`);
+        }
         const scratchCard = mapScratchCardResponse(scratchCardResponse, generateRandomReference());
 
         await this.storeTransaction(requestPayload, scratchCardResponse, scratchCard);
@@ -697,14 +705,17 @@ class BaseService {
         let fetchedTransaction = null;
         const transaction = await new Transaction().fetchTransactionByReference(transactionData.onepipeTransactionRef);
         let providerResponse = JSON.parse(transaction.providerResponse);
-        if (providerResponse.status !== 'success') {
-            if ((requestPayload.auth && requestPayload.auth.secure == ';') && (!requestPayload.transaction.app_info || !requestPayload.transaction.app_info.extras || requestPayload.transaction.app_info.extras.phone_number == '')) {
-                logger.error('Invalid authentication details - No authentication detail');
-                throw new AutheticationError(ResponseMessages.NO_AUTH_DETAILS_PROVIDED);
-            }
+        if (providerResponse.transactionStatus !== 'success') {
             const authUserData = await authUser(requestPayload);
-            const payantFetchedTransaction = getTransactionStatus(authUserData.token, transaction.providerTransactionRef);
-            fetchedTransaction = payantFetchedTransaction.data.response_payload.data.msg.results;
+            const payantFetchedTransaction = await getTransactionStatus(authUserData.token, providerResponse.transaction._id);
+            console.log(JSON.stringify(payantFetchedTransaction));
+           let data  =  {provider_response_code:"00",provider:"payant",
+            errors:null,error:{code:"01", message:"Transaction Failed"},
+            provider_response
+            :{},meta:{}};
+            data.provider_response = JSON.parse(transaction.mappedResponse).provider_response;
+            data.provider_response.meta = payantFetchedTransaction.data.response_payload;
+            fetchedTransaction = data;
         } else {
             fetchedTransaction = JSON.parse(transaction.mappedResponse);
         }

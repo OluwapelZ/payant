@@ -7,6 +7,9 @@ const { mapErrorResponse, mapWaitingForOTP, mapAPILogger } = require('../utils/m
 function success(res, statusCode, message, data=null) {
     res.status(statusCode).send({data: encrypt(config.crypt_key, JSON.stringify({status: CONSTANTS.REQUEST_STATUSES.SUCCESSFUL, message: message, data: data}))});
 };
+function failedRequest(res, statusCode, message, data=null) {
+    res.status(statusCode).send({data: encrypt(config.crypt_key, JSON.stringify({status: CONSTANTS.REQUEST_STATUSES.FAILED, message: message, data: data}))});
+};
 
 function optionsSuccess(res, statusCode, data=null) {
     res.status(statusCode).send({data: encrypt(config.crypt_key, JSON.stringify( {status: CONSTANTS.REQUEST_STATUSES.OPTIONS_DELIVERED, message: ResponseMessages.TRANSACTION_SUCCESSFUL, data: data}))});
@@ -24,4 +27,4 @@ function wrongAuthProvder(res, statusCode, message) {
     res.status(statusCode).send({data: encrypt(config.crypt_key, JSON.stringify({ status: CONSTANTS.REQUEST_STATUSES.FAILED, message: message }))})
 };
 
-module.exports = { success, optionsSuccess, failed, waitingForOTP, wrongAuthProvder }
+module.exports = { success, optionsSuccess, failed, waitingForOTP, wrongAuthProvder, failedRequest }

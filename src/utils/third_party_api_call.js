@@ -38,7 +38,6 @@ function authenticate(password, username) {
         phone: username,
         password: password
     };
-
     return axios.post(`${config.payant_base_url}${CONSTANTS.URL_PATHS.authenticate}`, authDetails, requestHeaders)
     .then(response => response.data)
     .catch(function (err) {
@@ -88,6 +87,8 @@ function payantServiceApiCall(token, url_path, payantRequestPayload, onePipeRequ
         body: payantRequestPayload,
         headers: requestHeaders,
         transaction_time: now().toISOString(),
+        destination_url: `${config.payant_base_url}${url_path}`,
+        request_description: "Payment"
     }
 
     return axios.post(`${config.payant_base_url}${url_path}`, payantRequestPayload, requestHeaders)

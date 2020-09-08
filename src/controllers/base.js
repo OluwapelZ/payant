@@ -1,4 +1,4 @@
-const { failed, success, optionsSuccess, waitingForOTP } = require('../utils/http_response');
+const { failed, success, optionsSuccess, waitingForOTP, failedRequest } = require('../utils/http_response');
 const CONSTANTS = require('../constants/constant');
 const ResponseMessage = require('../constants/response_messages');
 const {
@@ -17,6 +17,9 @@ class BaseController {
     async buyAirtime(req, res) {
         try {
             const serviceResponse = await new BaseService().buyAirtimeService(req.body);
+            if(serviceResponse.error!=null){
+                return failedRequest(res, CONSTANTS.STATUS_CODES.FAILED, "Transaction failed", serviceResponse);
+            }
             return success(res, CONSTANTS.STATUS_CODES.SUCCESS, ResponseMessage.TRANSACTION_SUCCESSFUL, serviceResponse);
         } catch (err) {
             if (err instanceof InvalidParamsError) {
@@ -181,6 +184,9 @@ class BaseController {
     async buyScratchCard(req, res) {
         try {
             const serviceResponse = await new BaseService().buyScratchCardService(req.body);
+            if(serviceResponse.error!=null){
+                return failedRequest(res, CONSTANTS.STATUS_CODES.FAILED, "Transaction failed", serviceResponse);
+            }
             return success(res, CONSTANTS.STATUS_CODES.SUCCESS, ResponseMessage.TRANSACTION_SUCCESSFUL, serviceResponse);
         } catch (err) {
             if (err instanceof InvalidParamsError) {
