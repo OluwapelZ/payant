@@ -328,11 +328,6 @@ class BaseService {
             throw new InvalidParamsError('Request type has be to passed as pay_electricity ');
         }
 
-        if (!requestPayload.transaction.details.order_reference && requestPayload.request_mode != CONSTANTS.REQUEST_TYPES.OPTIONS) {
-            logger.error('Order Reference is a required param for transact calls.');
-            throw new InvalidParamsError('Order Reference is a required param for transact calls.');
-        }
-
         if (!requestPayload.transaction.details || !requestPayload.transaction.details.biller_id) {
             logger.error(`Biller id is not provided`);
             throw new InvalidParamsError('Biller id is not provided');
@@ -469,11 +464,6 @@ class BaseService {
         if (requestPayload.request_type != CONSTANTS.REQUEST_TYPES.BUY_SCRATCH_CARD) {
             logger.error('Request type has be to passed as buy_scratch_card');
             throw new InvalidParamsError('Request type has be to passed as buy_scratch_card ');
-        }
-
-        if (!requestPayload.transaction.details.order_reference) {
-            logger.error('Order Reference is a required param for transact calls.');
-            throw new InvalidParamsError('Order Reference is a required param for transact calls.');
         }
 
         if (!requestPayload.transaction.details || !requestPayload.transaction.details.biller_id) {
