@@ -261,7 +261,7 @@ class BaseService {
         }
 
         const postDetails = {
-            amount: requestPayload.transaction.amount,
+            amount: requestPayload.transaction.amount / 100,
             service_category_id: config.service_biller_ids.buy_data[`${requestPayload.transaction.details.biller_id}`],
             account: requestPayload.transaction.customer.customer_ref,
             bundleCode: requestPayload.transaction.details.biller_item_id,
@@ -352,7 +352,7 @@ class BaseService {
         const postDetails = {
             service_category_id: billerId,
             meter_number: requestPayload.transaction.customer.customer_ref,
-            amount: requestPayload.transaction.amount,
+            amount: requestPayload.transaction.amount / 100,
             phone: requestPayload.transaction.customer.mobile_no //should not start with 234
         };
 
@@ -429,7 +429,7 @@ class BaseService {
             service_category_id: billerId,
             smartcard: requestPayload.transaction.customer.customer_ref,
             bundleCode: requestPayload.transaction.amount,
-            amount: requestPayload.transaction.amount,
+            amount: requestPayload.transaction.amount / 100,
             name: requestPayload.transaction.details.biller_item_id,
             invoicePeriod: CONSTANTS.INVOICE_PERIOD,
             phone: requestPayload.transaction.customer.mobile_no,
@@ -490,7 +490,7 @@ class BaseService {
         const postDetails = {
             service_category_id: billerId,
             pins: 1,
-            amount: requestPayload.transaction.amount/100
+            amount: requestPayload.transaction.amount / 100
         };
         console.log(postDetails);
 
