@@ -9,15 +9,27 @@ const { now } = require('./util');
  * Get Transaction status
  * @param {phone, message} smsDetails 
  */
-function getTransactionStatus(token, refCode) {
+function getTransactionStatus(token, refCode, onePipeRequestPayload) {
     const requestHeaders = {
         headers: { 
             Authorization: token,
         }
     };
 
+    const apiLoggerRequest = {
+        ...onePipeRequestPayload,
+        body: {},
+        headers: requestHeaders,
+        transaction_time: now().toISOString(),
+        destination_url: `${config.payant_base_url}/transactions`,
+        request_description: "Get Transtaction Status"
+    }
+
     return axios.get(`${config.payant_base_url}/transactions/${refCode}`, requestHeaders)
-    .then(response => response.data)
+    .then(async (response) => {
+        await apiLogger(mapAPILogger(apiLoggerRequest, response));
+        return response.data;
+    })
     .catch(function (err) {
         logger.error(`Error verifying transaction status: ${err.message}`);
         throw err;
@@ -50,17 +62,30 @@ function authenticate(password, username) {
  * Fetch list of provider services
  * @param {String} token 
  */
-function listServiceProductsAPI(token, billerId, account) {
+function listServiceProductsAPI(token, billerId, account, onePipeRequestPayload) {
     const uniqueAccount = (account) ? account : "";
     const requestHeaders = {
         headers: {
             Authorization: token
         }
     };
+
+    const apiLoggerRequest = {
+        ...onePipeRequestPayload,
+        body: {account: uniqueAccount},
+        headers: requestHeaders,
+        transaction_time: now().toISOString(),
+        destination_url: `${config.payant_base_url}${CONSTANTS.URL_PATHS.list_services_products}/${billerId}/products`,
+        request_description: "Product Listing"
+    }
+
     requestHeaders.headers['Content-Type'] = 'application/json';
      
     return axios.post(`${config.payant_base_url}${CONSTANTS.URL_PATHS.list_services_products}/${billerId}/products`, { account: uniqueAccount }, requestHeaders)
-    .then(response => response.data)
+    .then(async (response) => {
+        await apiLogger(mapAPILogger(apiLoggerRequest, response));
+        return response.data;
+    })
     .catch(function (err) {
         logger.error(`Error occurred on authenticating user: ${err.message}`);
         throw err;
