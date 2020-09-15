@@ -111,7 +111,7 @@ class BaseService {
             }
         }
 
-        const services = await listServiceProductsAPI(token, billerId, (request.transaction.customer.customer_ref) ? request.transaction.customer.customer_ref : null);
+        const services = await listServiceProductsAPI(token, billerId, (request.transaction.customer.customer_ref) ? request.transaction.customer.customer_ref : null, request);
 
         if (services.status == CONSTANTS.PAYANT_STATUS_TYPES.error) {
             logger.error(`An error occured on attempt to fetch "${request.request_type}" service products: ${services.message}`);
@@ -123,7 +123,7 @@ class BaseService {
         const mappedServices = mapServiceProducts(services.data, orderReference, transactionRef);
 
         //Persist transaction request
-        await this.storeTransaction(request, services, mappedServices);
+        await this.storeTransaction(request, services, mappedServices, orderReference, true);
         return mappedServices;
     }
 
@@ -182,21 +182,19 @@ class BaseService {
         const airtimeResponse = await payantServiceApiCall(token, CONSTANTS.URL_PATHS.airtime, postDetails, requestPayload, async (data) => {
             data._service_category = {name:""};
             const referenceCode = data.transaction._id;
-            const processedTransaction = await getTransactionStatus(token, referenceCode);
             if (data.status === CONSTANTS.PAYANT_STATUS_TYPES.error) {
                 logger.error(`Provider error response on attempt to make airtime purchase: ${data.message}`);
                 await this.storeTransaction(requestPayload, data, 
                     mapAirtimeResponse(data, postDetails.amount, requestPayload.transaction.details.order_reference));
                 throw new ProviderResponseError(`Provider error response on attempt to make airtime purchase: ${data.message}`);
             }
-            else{
-                if (processedTransaction.status === CONSTANTS.PAYANT_STATUS_TYPES.error) {
-                    logger.error(`Provider error response on attempt to fetch airtime purchase transaction status: ${data.message}`);
-                    await this.storeTransaction(requestPayload, data, 
-                        mapAirtimeResponse(data, postDetails.amount, requestPayload.transaction.details.order_reference));
-                    throw new ProviderResponseError(`Provider error response on attempt to fetch airtime purchase transaction status: ${data.message}`);
-                }
-       
+
+            const processedTransaction = await getTransactionStatus(token, referenceCode);
+            if (processedTransaction.status === CONSTANTS.PAYANT_STATUS_TYPES.error) {
+                logger.error(`Provider error response on attempt to fetch airtime purchase transaction status: ${data.message}`);
+                await this.storeTransaction(requestPayload, data, 
+                    mapAirtimeResponse(data, postDetails.amount, requestPayload.transaction.details.order_reference));
+                throw new ProviderResponseError(`Provider error response on attempt to fetch airtime purchase transaction status: ${data.message}`);
             }
             return processedTransaction;
         });
@@ -250,7 +248,7 @@ class BaseService {
             throw new InvalidParamsError('Biller id or biller item id is not provided');
         }
 
-        if(!config.service_biller_ids.buy_data.hasOwnProperty(requestPayload.transaction.details.biller_id)) {
+        if(!config.service_biller_ids.buy_data.hasOwnProperty((requestPayload.transaction.details.biller_id).toLowerCase())) {
             logger.error(`Service "buy_data" does not support biller: ${requestPayload.transaction.details.biller_id}`);
             throw new BillerNotSupportedError(`Biller ${requestPayload.transaction.details.biller_id} is not supported by service buy_data`)
         }
@@ -262,7 +260,7 @@ class BaseService {
 
         const postDetails = {
             amount: requestPayload.transaction.amount / 100,
-            service_category_id: config.service_biller_ids.buy_data[`${requestPayload.transaction.details.biller_id}`],
+            service_category_id: config.service_biller_ids.buy_data[`${(requestPayload.transaction.details.biller_id).toLowerCase()}`],
             account: requestPayload.transaction.customer.customer_ref,
             bundleCode: requestPayload.transaction.details.biller_item_id,
             quantity: 1,
@@ -353,7 +351,7 @@ class BaseService {
             service_category_id: billerId,
             meter_number: requestPayload.transaction.customer.customer_ref,
             amount: requestPayload.transaction.amount / 100,
-            phone: requestPayload.transaction.customer.mobile_no //should not start with 234
+            phone: (requestPayload.transaction.customer.mobile_no).replace(`^[\+]?[(]?[0-9]{3}[)]?`, "0") //should not start with 234
         };
 
         const electricityResponse = await payantServiceApiCall(token, CONSTANTS.URL_PATHS.buy_electricity, postDetails, requestPayload);
@@ -703,7 +701,6 @@ class BaseService {
         if (providerResponse.transactionStatus !== 'success') {
             const authUserData = await authUser(requestPayload);
             const payantFetchedTransaction = await getTransactionStatus(authUserData.token, providerResponse.transaction._id);
-            console.log(JSON.stringify(payantFetchedTransaction));
            let data  =  {provider_response_code:"00",provider:"payant",
             errors:null,error:{code:"01", message:"Transaction Failed"},
             provider_response
@@ -721,8 +718,10 @@ class BaseService {
      * Store transaction for each request made
      * @param {request paylaod && response payload} transactionDetails 
      */
-    async storeTransaction(request, serviceRawResponse, mappedResponse) {
-        const transactionDetails = mapTransactionDetails(request.request_ref, request.transaction.transaction_ref, request, serviceRawResponse, mappedResponse, CONSTANTS.REQUEST_TYPES.TRANSACT);
+    async storeTransaction(request, serviceRawResponse, mappedResponse, order_ref, isOptionsCall=false) {
+        const transactionDetails = (isOptionsCall) ?
+        mapTransactionDetails(request.request_ref, request.transaction.transaction_ref, request, serviceRawResponse, mappedResponse, CONSTANTS.REQUEST_TYPES.TRANSACT, order_ref, true) : 
+        mapTransactionDetails(request.request_ref, request.transaction.transaction_ref, request, serviceRawResponse, mappedResponse, CONSTANTS.REQUEST_TYPES.TRANSACT, order_ref);
         await new Transaction().createTransaction(transactionDetails);
     }
 }

@@ -1,7 +1,6 @@
 const CONSTANTS = require("../constants/constant");
 const config = require("../config/config");
 const { generateRandomReference, now, matchString } = require("../utils/util");
-const { decryptData } = require("./crypt");
 
 function mapErrorResponse(message) {
   return {
@@ -94,7 +93,7 @@ function mapProducts(productsData, orderReference) {
         customer_name: "",
         biller_item_meta: {},
         currency: "566",
-        amount: element.amount,
+        amount: Number(element.amount) * 100,
         terms: null,
         terms_url: null,
       });
@@ -186,7 +185,7 @@ function mapElectricityResponse(responsePayload, isMock = false) {
       fulfillment_status: "Succesful",
       transaction_final_amount: isMock ? "0000000" : responsePayload.amount, //in kobo
       transaction_fee: 0.0,
-      token: isMock ? "1234" : responsePayload.pin.pinCode,
+      pin_code: isMock ? "1234" : responsePayload.pin.pinCode,
       narration: "Electricity subscription was successful",
     },
   };

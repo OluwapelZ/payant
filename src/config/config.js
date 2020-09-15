@@ -49,11 +49,11 @@ const config = {
             eedcpr: process.env.ENUGU_PREPAID,
         },
         buy_data: {
-            Smile: process.env.SMILE,
-            MTN: process.env.MTN_DATA,
-            Spectranet: process.env.SPECTRANET,
+            smile: process.env.SMILE,
+            mtn: process.env.MTN_DATA,
+            spectranet: process.env.SPECTRANET,
             '9mobile': process.env.NINE_MOBILE_DATA,
-            Airtel: process.env.AIRTEL_DATA,
+            airtel: process.env.AIRTEL_DATA,
         },
         pay_tv: {
             gotv: process.env.GOTV || 15,
