@@ -23,6 +23,7 @@ const config = require('../config/config');
 const Transaction = require('../models/transaction');
 const { decryptData } = require('../utils/crypt');
 const logger = require('../utils/logger');
+const { request } = require('express');
 
 class BaseService {
     async queryTransaction(requestPayload) {
@@ -98,13 +99,14 @@ class BaseService {
             throw new BillerNotSupportedError(`Provider does not support "${request.transaction.details.biller_id}" biller`);
         }
 
-        if (['pay tv'].includes(request.request_type)) {
+        let verifyCustomer = {};
+        if (['pay tv'].includes(request.ParsedRequestType)) {
             if (!request.transaction.customer.customer_ref) {
                 logger.error(`Missing parameter customer_ref for service "${request.request_type}"`);
                 throw new CustomerVerificationError(`Missing parameter customer_ref for service "${request.request_type}"`);
             }
 
-            const verifyCustomer = await payantServiceApiCall(token, `${CONSTANTS.URL_PATHS.list_services_products}/${billerId}/verify`, { account: request.transaction.customer.customer_ref }, request);
+            verifyCustomer = await payantServiceApiCall(token, `${CONSTANTS.URL_PATHS.list_services_products}/${billerId}/verify`, { account: request.transaction.customer.customer_ref }, request);
             if (verifyCustomer.status != CONSTANTS.PAYANT_STATUS_TYPES.successful) {
                 logger.error(`Customer unique reference verification with biller ${request.transaction.details.biller_id} failed: ${verifyCustomer.message}`);
                 throw new CustomerVerificationError(`Customer unique reference verification with biller ${request.transaction.details.biller_id} failed: ${verifyCustomer.message}`);
@@ -120,10 +122,11 @@ class BaseService {
 
         const orderReference = generateRandomReference();
         const transactionRef = generateRandomReference();
-        const mappedServices = mapServiceProducts(services.data, orderReference, transactionRef);
+        const mappedServices = mapServiceProducts(services.data, orderReference, transactionRef,false,verifyCustomer);
 
         //Persist transaction request
         await this.storeTransaction(request, services, mappedServices, orderReference, true);
+        mappedServices.isOptionsCall = true;
         return mappedServices;
     }
 
@@ -241,7 +244,7 @@ class BaseService {
             logger.error('Order Reference is a required param for transact calls.');
             throw new InvalidParamsError('Order Reference is a required param for transact calls.');
         }
-        await new Transaction().fetchTransactionByOrderRef(requestPayload.transaction.details.order_reference); // Fetch active transaction by order refrence
+        //await new Transaction().fetchTransactionByOrderRef(requestPayload.transaction.details.order_reference); // Fetch active transaction by order refrence
 
         if(!requestPayload.transaction.details || !requestPayload.transaction.details.biller_id || !requestPayload.transaction.details.biller_item_id) {
             logger.error(`Biller id or biller item id has to be passed in details object nested in transaction object`);
@@ -266,7 +269,6 @@ class BaseService {
             quantity: 1,
             status_url: CONSTANTS.SERVICE_STATUS_URL.BUY_AIRTIME
         };
-
         const dataResponse = await payantServiceApiCall(token, CONSTANTS.URL_PATHS.data, postDetails, requestPayload, async (data) => {
             if (data.status === CONSTANTS.PAYANT_STATUS_TYPES.error) {
                 logger.error(`Provider error response on attempt to make data purchase: ${data.message}`);
@@ -274,7 +276,7 @@ class BaseService {
             }
 
             const referenceCode = data.transaction._id;
-            const processedTransaction = await getTransactionStatus(token, referenceCode);
+            const processedTransaction = await getTransactionStatus(token, referenceCode,requestPayload);
 
             if (![CONSTANTS.PAYANT_STATUS_TYPES.successful, CONSTANTS.PAYANT_STATUS_TYPES.pending].includes(processedTransaction.status)) {
                 logger.error(`Provider error response on attempt to fetch data purchase transaction status: ${data.message}`);
@@ -355,6 +357,10 @@ class BaseService {
         };
 
         const electricityResponse = await payantServiceApiCall(token, CONSTANTS.URL_PATHS.buy_electricity, postDetails, requestPayload);
+        if(electricityResponse.status==="error"){
+            logger.error(`Request failed: ${electricityResponse.message}`);
+            throw new CustomerVerificationError(`Request failed: ${electricityResponse.message}`);
+        }
         const electricity = mapElectricityResponse(electricityResponse.transaction);
 
         await this.storeTransaction(requestPayload, electricityResponse, electricity);
@@ -426,14 +432,17 @@ class BaseService {
         const postDetails = {
             service_category_id: billerId,
             smartcard: requestPayload.transaction.customer.customer_ref,
-            bundleCode: requestPayload.transaction.amount,
+            bundleCode: requestPayload.transaction.details.biller_item_id,
             amount: requestPayload.transaction.amount / 100,
             name: requestPayload.transaction.details.biller_item_id,
             invoicePeriod: CONSTANTS.INVOICE_PERIOD,
             phone: requestPayload.transaction.customer.mobile_no,
         }
-
         const tvResponse = await payantServiceApiCall(token, CONSTANTS.URL_PATHS.buy_tv, postDetails, requestPayload);
+        if(tvResponse.status==="error"){
+            logger.error(`Request failed: ${tvResponse.message}`);
+            throw new CustomerVerificationError(`Request failed: ${tvResponse.message}`);
+        }
         const tv = mapTvResponse(requestPayload, tvResponse);
 
         await this.storeTransaction(requestPayload, tvResponse, tv);
@@ -490,10 +499,10 @@ class BaseService {
             pins: 1,
             amount: requestPayload.transaction.amount / 100
         };
-        console.log(postDetails);
+     
 
         const scratchCardResponse = await payantServiceApiCall(token, CONSTANTS.URL_PATHS.buy_scratch_card, postDetails, requestPayload);
-        console.log(JSON.stringify(scratchCardResponse));
+    
     
         if (scratchCardResponse.status === CONSTANTS.PAYANT_STATUS_TYPES.error) {
             logger.error(`Provider error response on attempt to buy scratch card: ${scratchCardResponse.message}`);
@@ -698,9 +707,12 @@ class BaseService {
         let fetchedTransaction = null;
         const transaction = await new Transaction().fetchTransactionByReference(transactionData.onepipeTransactionRef);
         let providerResponse = JSON.parse(transaction.providerResponse);
+        providerResponse.transactionStatus = providerResponse.transactionStatus ?
+         providerResponse.transactionStatus : providerResponse.status;
         if (providerResponse.transactionStatus !== 'success') {
             const authUserData = await authUser(requestPayload);
-            const payantFetchedTransaction = await getTransactionStatus(authUserData.token, providerResponse.transaction._id);
+            const payantFetchedTransaction = await getTransactionStatus(authUserData.token, 
+                providerResponse.transaction._id, requestPayload);
            let data  =  {provider_response_code:"00",provider:"payant",
             errors:null,error:{code:"01", message:"Transaction Failed"},
             provider_response

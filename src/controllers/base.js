@@ -61,6 +61,9 @@ class BaseController {
     async buyData(req, res) {
         try {
             const serviceResponse = await new BaseService().buyDataService(req.body);
+            if(serviceResponse.isOptionsCall){
+                return optionsSuccess(res, CONSTANTS.STATUS_CODES.SUCCESS, ResponseMessage.TRANSACTION_SUCCESSFUL, serviceResponse);
+            }
             return success(res, CONSTANTS.STATUS_CODES.SUCCESS, ResponseMessage.TRANSACTION_SUCCESSFUL, serviceResponse);
         } catch (err) {
             if (err instanceof InvalidParamsError) {
@@ -143,6 +146,9 @@ class BaseController {
     async payTv(req, res) {
         try {
             const serviceResponse = await new BaseService().buyTvService(req.body);
+            if(serviceResponse.isOptionsCall){
+                return optionsSuccess(res, CONSTANTS.STATUS_CODES.SUCCESS, ResponseMessage.TRANSACTION_SUCCESSFUL, serviceResponse);
+            }
             return success(res, CONSTANTS.STATUS_CODES.SUCCESS, ResponseMessage.TRANSACTION_SUCCESSFUL, serviceResponse);
         } catch (err) {
             if (err instanceof InvalidParamsError) {

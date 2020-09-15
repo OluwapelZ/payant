@@ -1,6 +1,7 @@
 const CONSTANTS = require("../constants/constant");
 const config = require("../config/config");
 const { generateRandomReference, now, matchString } = require("../utils/util");
+const { request } = require("express");
 
 function mapErrorResponse(message) {
   return {
@@ -45,7 +46,8 @@ function mapServiceProducts(
   rawData,
   orderReference,
   transactionRef,
-  isMock = false
+  isMock = false,
+  verifyCustomer
 ) {
   return {
     provider_response_code: "00",
@@ -56,41 +58,41 @@ function mapServiceProducts(
       products: isMock
         ? [
             {
-              order_reference: "orderReference",
-              biller_item_id: "productsData._id",
-              biller_item_code: "element.bundleCode",
-              biller_item_name: "element.name",
+              order_reference: "ZDHoZ83q2tWaeIh6nXahYzA1781WW",
+              biller_item_id: "877",
+              biller_item_code: "8777",
+              biller_item_name: "Test Subscription",
               biller_item_description: "",
               biller_item_image_url: "",
               biller_item_prompt: "",
-              customer_name: "",
+              customer_name: "Test User",
               biller_item_meta: {},
               currency: "566",
-              amount: "element.amount",
+              amount: "6788",
               terms: null,
               terms_url: null,
             },
           ]
-        : mapProducts(rawData, orderReference),
+        : mapProducts(rawData, orderReference,verifyCustomer),
     },
     reference: isMock ? "mockReference" : transactionRef,
     meta: {},
   };
 }
 
-function mapProducts(productsData, orderReference) {
+function mapProducts(productsData, orderReference,verifyCustomer) {
   const productList = [];
   if (productsData.productCategories.length > 0) {
     productsData.productCategories.forEach((element) => {
       productList.push({
         order_reference: orderReference,
-        biller_item_id: productsData._id,
+        biller_item_id: element.bundleCode,
         biller_item_code: element.bundleCode,
         biller_item_name: element.name,
         biller_item_description: "",
         biller_item_image_url: "",
         biller_item_prompt: "",
-        customer_name: "",
+        customer_name: verifyCustomer.data?  verifyCustomer.data.name: "",
         biller_item_meta: {},
         currency: "566",
         amount: Number(element.amount) * 100,
@@ -129,7 +131,6 @@ function mapTransactionDetails(
 }
 
 function mapAirtimeResponse(responsePayload, amount, orderRef, isMock = false) {
-  console.log(responsePayload._service_category);
   return {
     provider_response_code: "00",
     provider: config.provider_name,
@@ -185,7 +186,7 @@ function mapElectricityResponse(responsePayload, isMock = false) {
       fulfillment_status: "Succesful",
       transaction_final_amount: isMock ? "0000000" : responsePayload.amount, //in kobo
       transaction_fee: 0.0,
-      pin_code: isMock ? "1234" : responsePayload.pin.pinCode,
+      token: isMock ? "1234" : responsePayload.pin.pinCode,
       narration: "Electricity subscription was successful",
     },
   };
