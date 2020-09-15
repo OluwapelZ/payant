@@ -186,8 +186,7 @@ function mapElectricityResponse(responsePayload, isMock = false) {
       fulfillment_status: "Succesful",
       transaction_final_amount: isMock ? "0000000" : responsePayload.amount, //in kobo
       transaction_fee: 0.0,
-      pin_code: isMock ? "1234" : responsePayload.pin.pinCode,
-      pin_serial_number: isMock ? "1234ABC" : responsePayload.pin.serialNumber,
+      token: isMock ? "1234" : responsePayload.pin.pinCode,
       narration: "Electricity subscription was successful",
     },
   };
