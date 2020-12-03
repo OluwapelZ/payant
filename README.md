@@ -1,4 +1,4 @@
-# Payant Micro Service
+# Sample play around Micro Service
 
 ### This micro service is provider specific
 
